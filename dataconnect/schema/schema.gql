@@ -1,0 +1,71 @@
+type User @table {
+  displayName: String!
+  email: String!
+  role: String! # Represents 'PARENT', 'ADMIN', 'DRIVER'
+  createdAt: Timestamp!
+  phoneNumber: String
+  photoUrl: String
+}
+
+type Student @table {
+  firstName: String!
+  lastName: String!
+  studentId: String! # Unique school identifier
+  parentUser: User!
+  grade: Int
+  dateOfBirth: Date
+  specialInstructions: String
+}
+
+type Location @table {
+  addressLine1: String!
+  city: String!
+  state: String!
+  zipCode: String!
+  latitude: Float!
+  longitude: Float!
+  createdAt: Timestamp!
+  name: String
+}
+
+type Route @table {
+  name: String!
+  routeNumber: String! # Unique route identifier
+  createdAt: Timestamp!
+  description: String
+  estimatedDurationMinutes: Int
+  assignedDriver: User # Default driver for the route
+}
+
+type RouteStop @table {
+  route: Route!
+  location: Location!
+  stopOrder: Int!
+  estimatedArrivalTime: Timestamp! # Time of day (HH:MM:SS) combined with a date context
+  estimatedDepartureTime: Timestamp! # Time of day (HH:MM:SS) combined with a date context
+  createdAt: Timestamp!
+  instructions: String
+}
+
+type Bus @table {
+  licensePlate: String! # Unique license plate
+  capacity: Int!
+  createdAt: Timestamp!
+  make: String
+  model: String
+  lastMaintenanceDate: Timestamp
+}
+
+type Trip @table {
+  route: Route!
+  bus: Bus!
+  driver: User!
+  tripDate: Date!
+  status: String! # Represents 'SCHEDULED', 'IN_PROGRESS', 'COMPLETED', 'DELAYED', 'CANCELED'
+  createdAt: Timestamp!
+  actualStartTime: Timestamp
+  actualEndTime: Timestamp
+  currentLatitude: Float
+  currentLongitude: Float
+  lastLocationReportedAt: Timestamp
+}
