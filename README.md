@@ -15,7 +15,7 @@ SafeRide eliminates the hassle of multiple apps by combining all roles into one 
 It’s ideal for schools, transport providers, and parents looking for trustworthy school ride management.
 SafeRide is a web-based school transport management platform where **Parents**, **Drivers**, and **Admins** can log in through a single app and perform their respective tasks.  
 
-##Project tools
+## Project tools
 
 The app is built using **React** + **TypeScript** and powered by **Firebase** for authentication, database, and storage.
 
