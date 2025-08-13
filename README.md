@@ -17,5 +17,5 @@ SafeRide is a web-based school transport management platform where **Parents**, 
 
 ## Project tools
 
-The app is built using **React** + **TypeScript** and powered by **Firebase** for authentication, database, and storage.
+The app is built using **Vite** + **React** + **TypeScript** and powered by **Firebase** for authentication, database, and storage.
 
