@@ -23,7 +23,15 @@ const RouteSetup = () => {
   const { updateUserProfile, userProfile } = useAuth();
   
   const [loading, setLoading] = useState(false);
-  const apiKey = import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+  const [apiKey, setApiKey] = useState<string>('');
+
+  // Check for stored API key on component mount
+  useEffect(() => {
+    const savedApiKey = localStorage.getItem('google_maps_api_key');
+    if (savedApiKey) {
+      setApiKey(savedApiKey);
+    }
+  }, []);
   const [startPoint, setStartPoint] = useState<MapPoint | null>(
     userProfile?.routes?.startPoint || null
   );
@@ -82,18 +90,22 @@ const RouteSetup = () => {
         {/* Google Maps Integration */}
         <Card className="border-border">
           <CardHeader>
-            <CardTitle className="text-lg">Set Route on Map</CardTitle>
+            <CardTitle className="text-lg">Google Maps Setup</CardTitle>
             <p className="text-sm text-muted-foreground">
-              Click on the map to set your pickup and drop-off points
+              {!apiKey ? 'Enter your Google Maps API key to set your route' : 'Click on the map to set your pickup and drop-off points'}
             </p>
           </CardHeader>
           <CardContent>
-            <GoogleMap
-              apiKey={apiKey}
-              onRouteSet={handleRouteSet}
-              initialStart={startPoint}
-              initialEnd={endPoint}
-            />
+            {!apiKey ? (
+              <GoogleMapsKeyInput onKeySet={setApiKey} />
+            ) : (
+              <GoogleMap
+                apiKey={apiKey}
+                onRouteSet={handleRouteSet}
+                initialStart={startPoint}
+                initialEnd={endPoint}
+              />
+            )}
           </CardContent>
         </Card>
 

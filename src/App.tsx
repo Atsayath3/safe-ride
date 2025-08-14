@@ -27,6 +27,7 @@ import ParentLogin from "./pages/parent/ParentLogin";
 import ParentDashboard from "./pages/parent/ParentDashboard";
 import AddChild from "./pages/parent/AddChild";
 import AddChildLocations from "./pages/parent/AddChildLocations";
+import EditChild from "./pages/parent/EditChild";
 import ParentProfileSetup from "./pages/parent/ParentProfileSetup";
 
 const queryClient = new QueryClient();
@@ -63,6 +64,7 @@ const App = () => (
             <Route path="/parent/dashboard" element={<ParentDashboard />} />
             <Route path="/parent/add-child" element={<AddChild />} />
             <Route path="/parent/add-child/locations" element={<AddChildLocations />} />
+            <Route path="/parent/edit-child/:childId" element={<EditChild />} />
             
             {/* Admin Routes */}
             <Route path="/admin/login" element={<AdminDashboard />} />

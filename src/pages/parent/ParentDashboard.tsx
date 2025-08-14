@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, deleteDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useNavigate } from 'react-router-dom';
 import { Plus } from 'lucide-react';
@@ -8,6 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import MobileLayout from '@/components/mobile/MobileLayout';
 import ChildCard from '@/components/parent/ChildCard';
 import ChildOptionsModal from '@/components/parent/ChildOptionsModal';
+import DeleteChildConfirmation from '@/components/parent/DeleteChildConfirmation';
 import DriverSelectionModal from '@/components/parent/DriverSelectionModal';
 import BookingConfirmationModal from '@/components/parent/BookingConfirmationModal';
 import { useAuth, UserProfile } from '@/contexts/AuthContext';
@@ -56,7 +57,9 @@ const ParentDashboard = () => {
   const [showOptionsModal, setShowOptionsModal] = useState(false);
   const [showDriverSelection, setShowDriverSelection] = useState(false);
   const [showBookingConfirmation, setShowBookingConfirmation] = useState(false);
+  const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   const [selectedDriver, setSelectedDriver] = useState<UserProfile | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const handleAddChild = () => {
     navigate('/parent/add-child');
@@ -84,9 +87,47 @@ const ParentDashboard = () => {
   };
 
   const handleEditChild = () => {
-    // TODO: Navigate to edit child screen
-    console.log('Edit child:', selectedChild?.fullName);
+    if (selectedChild) {
+      navigate(`/parent/edit-child/${selectedChild.id}`);
+    }
     handleCloseModal();
+  };
+
+  const handleDeleteChild = () => {
+    handleCloseModal();
+    setShowDeleteConfirmation(true);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!selectedChild) return;
+
+    setIsDeleting(true);
+    try {
+      await deleteDoc(doc(db, 'children', selectedChild.id));
+      
+      toast({
+        title: "Success!",
+        description: "Child has been deleted successfully.",
+      });
+      
+      // Remove child from local state
+      setChildren(prev => prev.filter(child => child.id !== selectedChild.id));
+      setShowDeleteConfirmation(false);
+      setSelectedChild(null);
+    } catch (error: any) {
+      console.error('Error deleting child:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete child. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleCloseDeleteConfirmation = () => {
+    setShowDeleteConfirmation(false);
   };
 
   const handleDriverSelect = (driver: UserProfile) => {
@@ -117,7 +158,24 @@ const ParentDashboard = () => {
     <MobileLayout
       title={`Welcome, ${userProfile?.firstName || 'Parent'}!`}
     >
-      <div className="p-4 space-y-6">
+      <div className="p-4 space-y-6 pb-20">
+        {/* Header with Add Child Button - Always visible */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="font-nunito font-semibold text-xl">Your Children</h2>
+            <p className="text-muted-foreground text-sm">
+              {children.length > 0 ? `${children.length} child${children.length > 1 ? 'ren' : ''} registered` : 'No children added yet'}
+            </p>
+          </div>
+          <Button
+            onClick={handleAddChild}
+            size="default"
+            className="rounded-xl font-medium px-4 py-2"
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            Add Child
+          </Button>
+        </div>
         {children.length > 0 ? (
           <div className="space-y-4">
             {children.map((child) => (
@@ -155,17 +213,6 @@ const ParentDashboard = () => {
           </div>
         )}
 
-        {/* Floating Action Button */}
-        <div className="fixed bottom-6 right-6">
-          <Button
-            onClick={handleAddChild}
-            size="lg"
-            className="w-14 h-14 rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:scale-105"
-          >
-            <Plus className="h-6 w-6" />
-          </Button>
-        </div>
-
         {/* Bottom Navigation Tabs */}
         <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border px-4 py-3">
           <div className="flex justify-around max-w-md mx-auto">
@@ -191,6 +238,7 @@ const ParentDashboard = () => {
           onBookRide={handleBookRide}
           onViewPastRides={handleViewPastRides}
           onEditChild={handleEditChild}
+          onDeleteChild={handleDeleteChild}
         />
       )}
 
@@ -212,6 +260,17 @@ const ParentDashboard = () => {
           driver={selectedDriver}
           child={selectedChild}
           onBookingComplete={handleBookingComplete}
+        />
+      )}
+
+      {/* Delete Child Confirmation Modal */}
+      {selectedChild && (
+        <DeleteChildConfirmation
+          isOpen={showDeleteConfirmation}
+          onClose={handleCloseDeleteConfirmation}
+          onConfirm={handleConfirmDelete}
+          child={selectedChild}
+          isDeleting={isDeleting}
         />
       )}
     </MobileLayout>

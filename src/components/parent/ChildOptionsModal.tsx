@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
-import { Car, History, Edit, X } from 'lucide-react';
+import { Car, History, Edit, Trash2, X } from 'lucide-react';
 import { Child } from '@/pages/parent/ParentDashboard';
 
 interface ChildOptionsModalProps {
@@ -11,6 +11,7 @@ interface ChildOptionsModalProps {
   onBookRide: () => void;
   onViewPastRides: () => void;
   onEditChild: () => void;
+  onDeleteChild: () => void;
 }
 
 const ChildOptionsModal: React.FC<ChildOptionsModalProps> = ({
@@ -19,7 +20,8 @@ const ChildOptionsModal: React.FC<ChildOptionsModalProps> = ({
   child,
   onBookRide,
   onViewPastRides,
-  onEditChild
+  onEditChild,
+  onDeleteChild
 }) => {
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
@@ -66,6 +68,15 @@ const ChildOptionsModal: React.FC<ChildOptionsModalProps> = ({
           >
             <Edit className="h-5 w-5 mr-3" />
             Edit Child Info
+          </Button>
+
+          <Button
+            variant="destructive"
+            onClick={onDeleteChild}
+            className="w-full justify-start text-left h-12 rounded-xl font-medium"
+          >
+            <Trash2 className="h-5 w-5 mr-3" />
+            Delete Child
           </Button>
 
           <Button
