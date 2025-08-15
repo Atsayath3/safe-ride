@@ -2,7 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { collection, query, where, getDocs, updateDoc, doc } from 'firebase/firestore';
@@ -17,6 +19,12 @@ const AdminDashboard = () => {
   const navigate = useNavigate();
   const [pendingDrivers, setPendingDrivers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
+  const [rejectionDialogOpen, setRejectionDialogOpen] = useState(false);
+  const [selectedDriverForRejection, setSelectedDriverForRejection] = useState<UserProfile | null>(null);
+  const [rejectionReason, setRejectionReason] = useState('');
+  const [submittingRejection, setSubmittingRejection] = useState(false);
+  const [documentsDialogOpen, setDocumentsDialogOpen] = useState(false);
+  const [selectedDriverForDocuments, setSelectedDriverForDocuments] = useState<UserProfile | null>(null);
 
   // Redirect to login if not authenticated or not admin
   useEffect(() => {
@@ -43,7 +51,7 @@ const AdminDashboard = () => {
   const fetchPendingDrivers = async () => {
     try {
       const driversQuery = query(
-        collection(db, 'users'),
+        collection(db, 'drivers'),
         where('role', '==', 'driver'),
         where('status', '==', 'pending')
       );
@@ -67,18 +75,26 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleDriverAction = async (driverUid: string, action: 'approve' | 'reject') => {
+  const handleDriverAction = async (driverUid: string, action: 'approve' | 'reject', rejectionReason?: string) => {
     try {
-      await updateDoc(doc(db, 'users', driverUid), {
+      const updateData: any = {
         status: action === 'approve' ? 'approved' : 'rejected'
-      });
+      };
+
+      // Add rejection reason and timestamp if rejecting
+      if (action === 'reject' && rejectionReason) {
+        updateData.rejectionReason = rejectionReason;
+        updateData.rejectedAt = new Date();
+      }
+
+      await updateDoc(doc(db, 'drivers', driverUid), updateData);
 
       toast({
         title: "Success",
-        description: `Driver ${action}d successfully`
+        description: `Driver ${action}d successfully${action === 'reject' ? ' with reason provided' : ''}`
       });
 
-      // Refresh the list
+      // Refresh the pending drivers list
       await fetchPendingDrivers();
     } catch (error) {
       toast({
@@ -86,6 +102,40 @@ const AdminDashboard = () => {
         description: `Failed to ${action} driver`,
         variant: "destructive"
       });
+    }
+  };
+
+  const handleRejectClick = (driver: UserProfile) => {
+    setSelectedDriverForRejection(driver);
+    setRejectionReason('');
+    setRejectionDialogOpen(true);
+  };
+
+  const handleViewDocuments = (driver: UserProfile) => {
+    setSelectedDriverForDocuments(driver);
+    setDocumentsDialogOpen(true);
+  };
+
+  const handleRejectSubmit = async () => {
+    if (!selectedDriverForRejection || !rejectionReason.trim()) {
+      toast({
+        title: "Error",
+        description: "Please provide a reason for rejection",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setSubmittingRejection(true);
+    try {
+      await handleDriverAction(selectedDriverForRejection.uid, 'reject', rejectionReason.trim());
+      setRejectionDialogOpen(false);
+      setSelectedDriverForRejection(null);
+      setRejectionReason('');
+    } catch (error) {
+      console.error('Rejection error:', error);
+    } finally {
+      setSubmittingRejection(false);
     }
   };
 
@@ -156,20 +206,12 @@ const AdminDashboard = () => {
         </div>
 
         {/* Stats */}
-        <div className="grid grid-cols-2 gap-4">
-          <Card>
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-primary">{pendingDrivers.length}</div>
-              <div className="text-sm text-muted-foreground">Pending</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-green-500">0</div>
-              <div className="text-sm text-muted-foreground">Approved Today</div>
-            </CardContent>
-          </Card>
-        </div>
+        <Card>
+          <CardContent className="p-4 text-center">
+            <div className="text-2xl font-bold text-primary">{pendingDrivers.length}</div>
+            <div className="text-sm text-muted-foreground">Pending Applications</div>
+          </CardContent>
+        </Card>
 
         {/* Pending Drivers */}
         <div className="space-y-4">
@@ -276,23 +318,36 @@ const AdminDashboard = () => {
                   </div>
 
                   {/* Action Buttons */}
-                  <div className="flex gap-2 pt-2">
+                  <div className="space-y-2">
+                    {/* View Documents Button */}
                     <Button 
-                      onClick={() => handleDriverAction(driver.uid, 'approve')}
-                      className="flex-1"
-                      disabled={!hasAllDocuments(driver)}
+                      onClick={() => handleViewDocuments(driver)}
+                      variant="outline"
+                      className="w-full border-blue-300 text-blue-700 hover:bg-blue-50"
                     >
-                      <CheckCircle className="h-4 w-4 mr-1" />
-                      Approve
+                      <Eye className="h-4 w-4 mr-2" />
+                      View All Documents
                     </Button>
-                    <Button 
-                      onClick={() => handleDriverAction(driver.uid, 'reject')}
-                      variant="destructive"
-                      className="flex-1"
-                    >
-                      <XCircle className="h-4 w-4 mr-1" />
-                      Reject
-                    </Button>
+                    
+                    {/* Approve/Reject Buttons */}
+                    <div className="flex gap-2">
+                      <Button 
+                        onClick={() => handleDriverAction(driver.uid, 'approve')}
+                        className="flex-1"
+                        disabled={!hasAllDocuments(driver)}
+                      >
+                        <CheckCircle className="h-4 w-4 mr-1" />
+                        Approve
+                      </Button>
+                      <Button 
+                        onClick={() => handleRejectClick(driver)}
+                        variant="destructive"
+                        className="flex-1"
+                      >
+                        <XCircle className="h-4 w-4 mr-1" />
+                        Reject
+                      </Button>
+                    </div>
                   </div>
                   
                   {!hasAllDocuments(driver) && (
@@ -306,6 +361,216 @@ const AdminDashboard = () => {
           )}
         </div>
       </div>
+
+      {/* Rejection Reason Dialog */}
+      <Dialog open={rejectionDialogOpen} onOpenChange={setRejectionDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-red-900">
+              Reject Driver Application
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            {selectedDriverForRejection && (
+              <div className="bg-red-50 p-3 rounded-lg border border-red-200">
+                <p className="text-sm font-medium text-red-900">
+                  {selectedDriverForRejection.firstName} {selectedDriverForRejection.lastName}
+                </p>
+                <p className="text-xs text-red-700">
+                  {selectedDriverForRejection.email}
+                </p>
+              </div>
+            )}
+            
+            <div className="space-y-2">
+              <Label htmlFor="rejection-reason" className="text-sm font-medium">
+                Reason for Rejection *
+              </Label>
+              <Textarea
+                id="rejection-reason"
+                placeholder="Please provide a clear reason for rejecting this application (e.g., incomplete documents, invalid license, etc.)"
+                value={rejectionReason}
+                onChange={(e) => setRejectionReason(e.target.value)}
+                className="min-h-[100px] resize-none"
+                maxLength={500}
+              />
+              <p className="text-xs text-muted-foreground text-right">
+                {rejectionReason.length}/500 characters
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => setRejectionDialogOpen(false)}
+              disabled={submittingRejection}
+            >
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={handleRejectSubmit}
+              disabled={!rejectionReason.trim() || submittingRejection}
+            >
+              {submittingRejection ? 'Rejecting...' : 'Reject Driver'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Documents Viewing Dialog */}
+      <Dialog open={documentsDialogOpen} onOpenChange={setDocumentsDialogOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-blue-900 flex items-center gap-2">
+              <Eye className="h-5 w-5" />
+              Document Review - {selectedDriverForDocuments?.firstName} {selectedDriverForDocuments?.lastName}
+            </DialogTitle>
+          </DialogHeader>
+          
+          {selectedDriverForDocuments && (
+            <div className="space-y-6 py-4">
+              {/* Driver Info Summary */}
+              <Card className="bg-blue-50 border-blue-200">
+                <CardContent className="p-4">
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <p><strong>Name:</strong> {selectedDriverForDocuments.firstName} {selectedDriverForDocuments.lastName}</p>
+                      <p><strong>Email:</strong> {selectedDriverForDocuments.email}</p>
+                      <p><strong>Phone:</strong> {selectedDriverForDocuments.phone}</p>
+                    </div>
+                    <div>
+                      <p><strong>City:</strong> {selectedDriverForDocuments.city}</p>
+                      <p><strong>Applied:</strong> {selectedDriverForDocuments.createdAt?.toLocaleDateString()}</p>
+                      <p><strong>Status:</strong> 
+                        <Badge variant="secondary" className="ml-2">
+                          {selectedDriverForDocuments.status || 'pending'}
+                        </Badge>
+                      </p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Documents Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {[
+                  { key: 'nic', label: 'National ID Card', doc: selectedDriverForDocuments.documents?.nic },
+                  { key: 'vehicleInsurance', label: 'Vehicle Insurance', doc: selectedDriverForDocuments.documents?.vehicleInsurance },
+                  { key: 'vehicleLicense', label: 'Vehicle License', doc: selectedDriverForDocuments.documents?.vehicleLicense },
+                  { key: 'profilePicture', label: 'Profile Picture', doc: selectedDriverForDocuments.documents?.profilePicture }
+                ].map(({ key, label, doc }) => (
+                  <Card key={key} className={`${doc ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'}`}>
+                    <CardHeader className="pb-3">
+                      <CardTitle className={`text-base flex items-center gap-2 ${
+                        doc ? 'text-green-800' : 'text-red-800'
+                      }`}>
+                        {doc ? (
+                          <CheckCircle className="h-5 w-5 text-green-600" />
+                        ) : (
+                          <XCircle className="h-5 w-5 text-red-600" />
+                        )}
+                        {label}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {doc ? (
+                        <div className="space-y-3">
+                          <div className="relative">
+                            <img 
+                              src={doc} 
+                              alt={`${label} document`}
+                              className="w-full h-48 object-cover rounded-lg border border-gray-300 cursor-pointer hover:shadow-lg transition-shadow"
+                              onClick={() => window.open(doc, '_blank')}
+                            />
+                            <div className="absolute top-2 right-2">
+                              <Button 
+                                size="sm" 
+                                variant="secondary"
+                                onClick={() => window.open(doc, '_blank')}
+                                className="bg-black/70 text-white hover:bg-black/90"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                          <p className="text-xs text-green-700 font-medium">✓ Document uploaded</p>
+                        </div>
+                      ) : (
+                        <div className="h-48 border-2 border-dashed border-red-300 rounded-lg flex items-center justify-center">
+                          <div className="text-center text-red-600">
+                            <FileText className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                            <p className="text-sm font-medium">Document not uploaded</p>
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
+              {/* Vehicle Information */}
+              {selectedDriverForDocuments.vehicle && (
+                <Card className="bg-gray-50 border-gray-200">
+                  <CardHeader>
+                    <CardTitle className="text-gray-800 flex items-center gap-2">
+                      <Car className="h-5 w-5" />
+                      Vehicle Information
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
+                      <div><strong>Type:</strong> {selectedDriverForDocuments.vehicle.type}</div>
+                      <div><strong>Capacity:</strong> {selectedDriverForDocuments.vehicle.capacity}</div>
+                      <div><strong>Model:</strong> {selectedDriverForDocuments.vehicle.model}</div>
+                      <div><strong>Year:</strong> {selectedDriverForDocuments.vehicle.year}</div>
+                      <div><strong>Color:</strong> {selectedDriverForDocuments.vehicle.color}</div>
+                      <div><strong>Plate:</strong> {selectedDriverForDocuments.vehicle.plateNumber}</div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Quick Actions */}
+              <div className="flex gap-3 pt-4 border-t">
+                <Button 
+                  onClick={() => {
+                    setDocumentsDialogOpen(false);
+                    handleDriverAction(selectedDriverForDocuments.uid, 'approve');
+                  }}
+                  className="flex-1"
+                  disabled={!hasAllDocuments(selectedDriverForDocuments)}
+                >
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Approve Driver
+                </Button>
+                <Button 
+                  onClick={() => {
+                    setDocumentsDialogOpen(false);
+                    handleRejectClick(selectedDriverForDocuments);
+                  }}
+                  variant="destructive"
+                  className="flex-1"
+                >
+                  <XCircle className="h-4 w-4 mr-2" />
+                  Reject Driver
+                </Button>
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setDocumentsDialogOpen(false)}
+            >
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </MobileLayout>
   );
 };

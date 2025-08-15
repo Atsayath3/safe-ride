@@ -16,7 +16,10 @@ import { UserProfile } from '@/contexts/AuthContext';
 export class BookingService {
   static async getAvailableDrivers(childLocation?: { pickup: { lat: number; lng: number }, school: { lat: number; lng: number } }): Promise<UserProfile[]> {
     try {
-      const driversRef = collection(db, 'users');
+      console.log('🔍 Searching for available drivers...');
+      console.log('Child location:', childLocation);
+      
+      const driversRef = collection(db, 'drivers');
       const q = query(
         driversRef, 
         where('role', '==', 'driver'),
@@ -32,17 +35,25 @@ export class BookingService {
         createdAt: doc.data().createdAt?.toDate(),
       })) as UserProfile[];
 
+      console.log(`📊 Found ${drivers.length} potential drivers from query`);
+
       // Filter drivers with availability, routes, and booking open
       const availableDrivers = [];
       for (const driver of drivers) {
+        console.log(`🚗 Checking driver: ${driver.firstName} ${driver.lastName} (${driver.uid})`);
+        
         // Check if driver has routes set
         if (!driver.routes?.startPoint || !driver.routes?.endPoint) {
+          console.log(`❌ Driver ${driver.firstName} has no routes set`);
           continue;
         }
+        console.log(`✅ Driver ${driver.firstName} has routes:`, driver.routes);
 
         // Check availability
         const availability = await this.getDriverAvailability(driver.uid);
+        console.log(`🪑 Driver ${driver.firstName} availability:`, availability);
         if (availability.availableSeats <= 0) {
+          console.log(`❌ Driver ${driver.firstName} has no available seats`);
           continue;
         }
 
@@ -52,17 +63,21 @@ export class BookingService {
             childLocation,
             { startPoint: driver.routes.startPoint, endPoint: driver.routes.endPoint }
           );
+          console.log(`🗺️ Route compatibility for ${driver.firstName}:`, routeCompatible);
           if (!routeCompatible) {
+            console.log(`❌ Driver ${driver.firstName} route not compatible`);
             continue;
           }
         }
 
+        console.log(`✅ Driver ${driver.firstName} is available!`);
         availableDrivers.push(driver);
       }
 
+      console.log(`🎯 Final available drivers: ${availableDrivers.length}`);
       return availableDrivers;
     } catch (error) {
-      console.error('Error fetching available drivers:', error);
+      console.error('❌ Error fetching available drivers:', error);
       throw error;
     }
   }
@@ -77,8 +92,15 @@ export class BookingService {
     // Calculate distance between child school and driver end (should be close)
     const schoolDistance = this.calculateDistance(childLocation.school, driverRoute.endPoint);
     
+    console.log(`📏 Distance calculations:`);
+    console.log(`  Pickup distance: ${pickupDistance.toFixed(2)}km (limit: 10km)`);
+    console.log(`  School distance: ${schoolDistance.toFixed(2)}km (limit: 10km)`);
+    
     // Consider compatible if both distances are within 10km
-    return pickupDistance <= 10 && schoolDistance <= 10;
+    const compatible = pickupDistance <= 10 && schoolDistance <= 10;
+    console.log(`  Compatible: ${compatible}`);
+    
+    return compatible;
   }
 
   static calculateDistance(point1: { lat: number; lng: number }, point2: { lat: number; lng: number }): number {
@@ -95,7 +117,7 @@ export class BookingService {
   static async getDriverAvailability(driverId: string): Promise<DriverAvailability> {
     try {
       // Get driver profile to get vehicle capacity
-      const driversRef = collection(db, 'users');
+      const driversRef = collection(db, 'drivers');
       const driverQuery = query(driversRef, where('uid', '==', driverId));
       const driverSnapshot = await getDocs(driverQuery);
       

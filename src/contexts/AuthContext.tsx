@@ -42,6 +42,9 @@ export interface UserProfile {
     endPoint?: { lat: number; lng: number; address: string };
   };
   whatsappConnected?: boolean;
+  rejectionReason?: string;
+  rejectedAt?: Date;
+  approvedAt?: Date;
 }
 
 interface AuthContextType {
@@ -98,7 +101,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logout = async () => {
-    await signOut(auth);
+    try {
+      await signOut(auth);
+      // Clear user profile state
+      setUserProfile(null);
+      setCurrentUser(null);
+    } catch (error) {
+      console.error('Logout error:', error);
+      throw error;
+    }
   };
 
   const checkExistingDriver = async (phoneNumber: string): Promise<UserProfile | null> => {

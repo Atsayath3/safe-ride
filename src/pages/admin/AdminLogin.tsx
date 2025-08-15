@@ -36,12 +36,21 @@ const AdminLogin = () => {
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // Check if user is admin
-      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      // Check if user is admin - try both collections
+      let userDoc = await getDoc(doc(db, 'admins', user.uid));
+      let userData = null;
       
       if (userDoc.exists()) {
-        const userData = userDoc.data();
-        
+        userData = userDoc.data();
+      } else {
+        // Fallback: also check users collection for backward compatibility
+        userDoc = await getDoc(doc(db, 'users', user.uid));
+        if (userDoc.exists()) {
+          userData = userDoc.data();
+        }
+      }
+      
+      if (userData) {
         if (userData.role === 'admin') {
           toast({
             title: "Welcome Admin!",
