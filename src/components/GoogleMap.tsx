@@ -1,7 +1,7 @@
+
 import React, { useEffect, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { MapPin, Search } from 'lucide-react';
 
 declare global {
   interface Window {
@@ -30,6 +30,7 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
   apiKey 
 }) => {
   const mapRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const [map, setMap] = useState<any>(null);
   const [directionsService, setDirectionsService] = useState<any>(null);
   const [directionsRenderer, setDirectionsRenderer] = useState<any>(null);
@@ -39,10 +40,6 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
   const [endPoint, setEndPoint] = useState<MapPoint | null>(initialEnd || null);
   const [isSettingStart, setIsSettingStart] = useState(true);
   const [isLoaded, setIsLoaded] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [autocompleteService, setAutocompleteService] = useState<any>(null);
-  const [placesService, setPlacesService] = useState<any>(null);
-  const [predictions, setPredictions] = useState<any[]>([]);
 
   useEffect(() => {
     const loadGoogleMaps = () => {
@@ -64,63 +61,128 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
 
   useEffect(() => {
     if (!isLoaded || !mapRef.current) return;
-
-    // Initialize map centered on Sri Lanka
-    const mapInstance = new window.google.maps.Map(mapRef.current, {
-      center: { lat: 7.8731, lng: 80.7718 }, // Sri Lanka center
-      zoom: 8,
-      mapTypeControl: false,
-      streetViewControl: false,
-      fullscreenControl: false,
-    });
-
-    const directionsServiceInstance = new window.google.maps.DirectionsService();
-    const directionsRendererInstance = new window.google.maps.DirectionsRenderer({
-      draggable: true,
-      suppressMarkers: true,
-    });
-
-    const autocompleteServiceInstance = new window.google.maps.places.AutocompleteService();
-    const placesServiceInstance = new window.google.maps.places.PlacesService(mapInstance);
-
-    directionsRendererInstance.setMap(mapInstance);
     
-    setMap(mapInstance);
-    setDirectionsService(directionsServiceInstance);
-    setDirectionsRenderer(directionsRendererInstance);
-    setAutocompleteService(autocompleteServiceInstance);
-    setPlacesService(placesServiceInstance);
+    // Prevent duplicate map initialization
+    if (mapRef.current.querySelector('.gm-style')) {
+      console.log('Map already initialized, skipping...');
+      return;
+    }
 
-    // Add click listener for setting points
-    mapInstance.addListener('click', (event: any) => {
-      const lat = event.latLng.lat();
-      const lng = event.latLng.lng();
-      
-      // Reverse geocode to get address
-      const geocoder = new window.google.maps.Geocoder();
-      geocoder.geocode({ location: { lat, lng } }, (results: any, status: any) => {
-        if (status === 'OK' && results[0]) {
-          const address = results[0].formatted_address;
-          const point = { lat, lng, address };
-          
-          if (isSettingStart) {
-            setStartPoint(point);
-          } else {
-            setEndPoint(point);
+    try {
+      const google = (window as any).google;
+      if (!google || !google.maps) {
+        console.error('Google Maps not loaded');
+        return;
+      }
+
+      // Initialize map with Sri Lankan center
+      const mapInstance = new google.maps.Map(mapRef.current, {
+        center: { lat: 7.8731, lng: 80.7718 },
+        zoom: 8,
+        disableDefaultUI: false,
+        mapTypeControl: true,
+        streetViewControl: false,
+        fullscreenControl: true,
+      });
+
+      mapInstance.addListener('click', (event: any) => {
+        const location: MapPoint = {
+          lat: event.latLng.lat(),
+          lng: event.latLng.lng(),
+          address: `${event.latLng.lat()}, ${event.latLng.lng()}`
+        };
+
+        if (isSettingStart) {
+          setStartPoint(location);
+          if (startMarker) {
+            startMarker.setMap(null);
           }
+          const newMarker = new google.maps.Marker({
+            position: { lat: location.lat, lng: location.lng },
+            map: mapInstance,
+            title: 'Start Location',
+            icon: 'http://maps.google.com/mapfiles/ms/icons/green-dot.png'
+          });
+          setStartMarker(newMarker);
+        } else {
+          setEndPoint(location);
+          if (endMarker) {
+            endMarker.setMap(null);
+          }
+          const newMarker = new google.maps.Marker({
+            position: { lat: location.lat, lng: location.lng },
+            map: mapInstance,
+            title: 'End Location',
+            icon: 'http://maps.google.com/mapfiles/ms/icons/red-dot.png'
+          });
+          setEndMarker(newMarker);
         }
       });
-    });
 
-    // Initialize markers if initial points exist
-    if (initialStart) {
-      setStartPoint(initialStart);
-    }
-    if (initialEnd) {
-      setEndPoint(initialEnd);
-    }
+      setMap(mapInstance);
 
-  }, [isLoaded, initialStart, initialEnd]);
+      const directionsService = new google.maps.DirectionsService();
+      const directionsRenderer = new google.maps.DirectionsRenderer();
+      directionsRenderer.setMap(mapInstance);
+      setDirectionsService(directionsService);
+      setDirectionsRenderer(directionsRenderer);
+
+      // Initialize autocomplete for search
+      const searchInput = document.getElementById('location-search') as HTMLInputElement;
+      if (searchInput) {
+        const autocomplete = new google.maps.places.Autocomplete(searchInput, {
+          componentRestrictions: { country: 'lk' },
+          fields: ['place_id', 'geometry', 'name', 'formatted_address'],
+        });
+
+        autocomplete.addListener('place_changed', () => {
+          const place = autocomplete.getPlace();
+          if (place.geometry && place.geometry.location) {
+            const location: MapPoint = {
+              lat: place.geometry.location.lat(),
+              lng: place.geometry.location.lng(),
+              address: place.formatted_address || place.name || ''
+            };
+            
+            if (isSettingStart) {
+              setStartPoint(location);
+              if (startMarker) {
+                startMarker.setMap(null);
+              }
+              const newMarker = new google.maps.Marker({
+                position: { lat: location.lat, lng: location.lng },
+                map: mapInstance,
+                title: 'Start Location',
+                icon: 'http://maps.google.com/mapfiles/ms/icons/green-dot.png'
+              });
+              setStartMarker(newMarker);
+            } else {
+              setEndPoint(location);
+              if (endMarker) {
+                endMarker.setMap(null);
+              }
+              const newMarker = new google.maps.Marker({
+                position: { lat: location.lat, lng: location.lng },
+                map: mapInstance,
+                title: 'End Location',
+                icon: 'http://maps.google.com/mapfiles/ms/icons/red-dot.png'
+              });
+              setEndMarker(newMarker);
+            }
+            
+            mapInstance.setCenter(location);
+            mapInstance.setZoom(15);
+            
+            // Update search input with selected place
+            searchInput.value = location.address;
+          }
+        });
+      }
+
+    } catch (error) {
+      console.error('Error initializing Google Map:', error);
+    }
+  }, [isLoaded, isSettingStart]);
 
   // Update markers when points change
   useEffect(() => {
@@ -195,59 +257,6 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
     }
   };
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setSearchQuery(value);
-    
-    if (value && autocompleteService) {
-      autocompleteService.getPlacePredictions(
-        {
-          input: value,
-          componentRestrictions: { country: 'lk' }, // Restrict to Sri Lanka
-        },
-        (predictions: any, status: any) => {
-          if (status === window.google.maps.places.PlacesServiceStatus.OK) {
-            setPredictions(predictions || []);
-          } else {
-            setPredictions([]);
-          }
-        }
-      );
-    } else {
-      setPredictions([]);
-    }
-  };
-
-  const handlePlaceSelect = (placeId: string, description: string) => {
-    if (!placesService) return;
-    
-    placesService.getDetails(
-      { placeId: placeId },
-      (place: any, status: any) => {
-        if (status === window.google.maps.places.PlacesServiceStatus.OK) {
-          const lat = place.geometry.location.lat();
-          const lng = place.geometry.location.lng();
-          const point = { lat, lng, address: description };
-          
-          if (isSettingStart) {
-            setStartPoint(point);
-          } else {
-            setEndPoint(point);
-          }
-          
-          // Center map on selected location
-          if (map) {
-            map.setCenter({ lat, lng });
-            map.setZoom(15);
-          }
-        }
-      }
-    );
-    
-    setSearchQuery('');
-    setPredictions([]);
-  };
-
   if (!isLoaded) {
     return (
       <div className="h-64 bg-muted rounded-lg flex items-center justify-center">
@@ -258,100 +267,85 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
 
   return (
     <div className="space-y-4">
-      {/* Search Input */}
-      <div className="relative">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-          <Input
-            placeholder={`Search for ${isSettingStart ? 'pickup' : 'drop-off'} location...`}
-            value={searchQuery}
-            onChange={handleSearchChange}
-            className="pl-10"
-          />
+      {/* Search Bar */}
+      <div className="relative mb-6">
+        <Input
+          id="location-search"
+          ref={searchInputRef}
+          type="text"
+          placeholder="Search for locations in Sri Lanka..."
+          className="w-full pl-12 pr-4 py-3 border-2 border-blue-200 rounded-xl text-sm font-medium bg-white shadow-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-100 transition-all duration-200 text-gray-900 placeholder:text-gray-500"
+        />
+        <div className="absolute left-4 top-1/2 transform -translate-y-1/2">
+          <svg className="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
         </div>
-        
-        {/* Search Results */}
-        {predictions.length > 0 && (
-          <div className="absolute z-10 w-full mt-1 bg-background border rounded-md shadow-lg max-h-60 overflow-y-auto">
-            {predictions.map((prediction: any, index: number) => (
-              <button
-                key={prediction.place_id}
-                className="w-full px-4 py-2 text-left hover:bg-muted flex items-center gap-2 border-b last:border-b-0"
-                onClick={() => handlePlaceSelect(prediction.place_id, prediction.description)}
-              >
-                <MapPin className="w-4 h-4 text-muted-foreground" />
-                <span className="text-sm">{prediction.description}</span>
-              </button>
-            ))}
-          </div>
-        )}
       </div>
-      
-      {/* Control Buttons */}
-      <div className="flex flex-wrap gap-2">
-        <Button
-          size="sm"
-          variant={isSettingStart ? "default" : "outline"}
+
+      <div className="flex gap-3 my-6">
+        <button
           onClick={() => setIsSettingStart(true)}
+          className={`flex-1 px-4 py-2.5 text-sm font-semibold rounded-lg border-2 transition-all duration-200 ${
+            isSettingStart 
+              ? 'bg-blue-600 text-white border-blue-600 shadow-lg hover:bg-blue-700 transform hover:scale-[1.02]' 
+              : 'bg-white text-blue-700 border-blue-300 hover:bg-blue-50 hover:border-blue-400 shadow-sm'
+          }`}
         >
-          Set Pickup Point
-        </Button>
-        <Button
-          size="sm"
-          variant={!isSettingStart ? "default" : "outline"}
+          Pickup Point
+        </button>
+        <button
           onClick={() => setIsSettingStart(false)}
+          className={`flex-1 px-4 py-2.5 text-sm font-semibold rounded-lg border-2 transition-all duration-200 ${
+            !isSettingStart 
+              ? 'bg-blue-600 text-white border-blue-600 shadow-lg hover:bg-blue-700 transform hover:scale-[1.02]' 
+              : 'bg-white text-blue-700 border-blue-300 hover:bg-blue-50 hover:border-blue-400 shadow-sm'
+          }`}
         >
-          Set Drop-off Point
-        </Button>
-        <Button
-          size="sm"
-          variant="outline"
+          Drop-off Point
+        </button>
+        <button
           onClick={resetPoints}
+          className="flex-1 px-4 py-2.5 text-sm font-semibold rounded-lg border-2 bg-white text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400 shadow-sm transition-all duration-200 hover:scale-[1.02]"
         >
           Reset
-        </Button>
+        </button>
       </div>
       
-      {/* Map */}
-      <div ref={mapRef} className="h-64 w-full rounded-lg border" />
+      <div ref={mapRef} className="h-80 w-full rounded-xl border-2 border-blue-200 shadow-lg bg-white overflow-hidden" style={{minHeight: '320px'}} />
       
-      {/* Current Instructions */}
-      <div className="text-sm text-center p-2 bg-muted/50 rounded-lg">
-        {!startPoint && !endPoint ? (
-          <p>Search above or click on the map to set your {isSettingStart ? 'pickup' : 'drop-off'} point</p>
-        ) : isSettingStart ? (
-          <p>Setting pickup point - search above or click on the map</p>
-        ) : (
-          <p>Setting drop-off point - search above or click on the map</p>
+      {/* Location Status Display */}
+      <div className="mt-4 space-y-2">
+        {startPoint && (
+          <div className="flex items-center gap-3 p-3 bg-green-50 border border-green-200 rounded-lg">
+            <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+            <div className="flex-1">
+              <p className="text-sm font-medium text-green-800">Pickup Location</p>
+              <p className="text-xs text-green-600 truncate">{startPoint.address}</p>
+            </div>
+          </div>
+        )}
+        
+        {endPoint && (
+          <div className="flex items-center gap-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+            <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+            <div className="flex-1">
+              <p className="text-sm font-medium text-red-800">Drop-off Location</p>
+              <p className="text-xs text-red-600 truncate">{endPoint.address}</p>
+            </div>
+          </div>
         )}
       </div>
       
-      {/* Selected Locations Display */}
-      {startPoint && (
-        <div className="flex items-center gap-2 p-3 bg-green-50 rounded-lg border border-green-200">
-          <div className="w-3 h-3 rounded-full bg-green-500"></div>
-          <div className="flex-1">
-            <p className="font-medium text-green-700 text-sm">Pickup Point</p>
-            <p className="text-green-600 text-xs">{startPoint.address}</p>
-          </div>
-        </div>
-      )}
-      
-      {endPoint && (
-        <div className="flex items-center gap-2 p-3 bg-red-50 rounded-lg border border-red-200">
-          <div className="w-3 h-3 rounded-full bg-red-500"></div>
-          <div className="flex-1">
-            <p className="font-medium text-red-700 text-sm">Drop-off Point</p>
-            <p className="text-red-600 text-xs">{endPoint.address}</p>
-          </div>
-        </div>
-      )}
-      
-      {/* Confirm Button */}
       {startPoint && endPoint && (
-        <Button onClick={handleConfirmRoute} className="w-full">
-          Confirm Route
-        </Button>
+        <div className="mt-6">
+          <Button 
+            onClick={handleConfirmRoute} 
+            className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold py-3 px-6 rounded-xl shadow-lg hover:shadow-xl transform hover:scale-[1.02] transition-all duration-200"
+          >
+            Confirm Route
+          </Button>
+        </div>
       )}
     </div>
   );

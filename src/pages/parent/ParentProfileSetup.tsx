@@ -36,7 +36,7 @@ const ParentProfileSetup = () => {
   };
 
   return (
-    <MobileLayout title="Complete Your Profile">
+    <MobileLayout title="Complete Your Profile" theme="parent">
       <form className="space-y-6 p-4" onSubmit={handleSubmit}>
         <div>
           <Label htmlFor="firstName">First Name</Label>
@@ -50,7 +50,9 @@ const ParentProfileSetup = () => {
           <Label htmlFor="phone">Phone Number</Label>
           <Input id="phone" name="phone" value={form.phone} onChange={handleChange} required />
         </div>
-        <Button type="submit" className="w-full" disabled={loading}>{loading ? 'Saving...' : 'Save & Continue'}</Button>
+        <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white shadow-md" disabled={loading}>
+          {loading ? 'Saving...' : 'Save & Continue'}
+        </Button>
       </form>
     </MobileLayout>
   );

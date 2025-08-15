@@ -69,34 +69,36 @@ const ProfileSetup = () => {
 
       case 'name':
         return (
-          <Card className="border-border">
-            <CardHeader>
-              <CardTitle className="text-center">Your Name</CardTitle>
+          <Card className="border-orange-200 shadow-lg bg-white">
+            <CardHeader className="bg-gradient-to-r from-orange-50 to-white rounded-t-lg">
+              <CardTitle className="text-center text-orange-900">Your Name</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="firstName">First Name</Label>
+                <Label htmlFor="firstName" className="text-orange-800">First Name</Label>
                 <Input
                   id="firstName"
                   type="text"
                   placeholder="John"
                   value={formData.firstName}
                   onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
+                  className="border-orange-200 focus:border-orange-400"
                 />
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="lastName">Last Name</Label>
+                <Label htmlFor="lastName" className="text-orange-800">Last Name</Label>
                 <Input
                   id="lastName"
                   type="text"
                   placeholder="Doe"
                   value={formData.lastName}
                   onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
+                  className="border-orange-200 focus:border-orange-400"
                 />
               </div>
               
-              <Button onClick={handleNameNext} className="w-full" variant="hero">
+              <Button onClick={handleNameNext} className="w-full bg-orange-600 hover:bg-orange-700 text-white shadow-md">
                 Continue
               </Button>
             </CardContent>
@@ -105,17 +107,17 @@ const ProfileSetup = () => {
 
       case 'terms':
         return (
-          <Card className="border-border">
-            <CardHeader>
-              <CardTitle className="text-center">Terms & Conditions</CardTitle>
+          <Card className="border-orange-200 shadow-lg bg-white">
+            <CardHeader className="bg-gradient-to-r from-orange-50 to-white rounded-t-lg">
+              <CardTitle className="text-center text-orange-900">Terms & Conditions</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="max-h-48 overflow-y-auto bg-muted p-4 rounded-md text-sm">
-                <h4 className="font-semibold mb-2">Driver Agreement</h4>
-                <p className="mb-2">
+              <div className="max-h-48 overflow-y-auto bg-orange-50 p-4 rounded-md text-sm border border-orange-200">
+                <h4 className="font-semibold mb-2 text-orange-900">Driver Agreement</h4>
+                <p className="mb-2 text-orange-800">
                   By becoming a driver on Safe Ride, you agree to:
                 </p>
-                <ul className="list-disc list-inside space-y-1 text-muted-foreground">
+                <ul className="list-disc list-inside space-y-1 text-orange-700">
                   <li>Provide safe and reliable transportation</li>
                   <li>Maintain your vehicle in good condition</li>
                   <li>Keep all required documents valid</li>
@@ -131,9 +133,9 @@ const ProfileSetup = () => {
                   id="terms"
                   checked={acceptedTerms}
                   onChange={(e) => setAcceptedTerms(e.target.checked)}
-                  className="rounded border-border"
+                  className="rounded border-orange-300 text-orange-600 focus:ring-orange-500"
                 />
-                <Label htmlFor="terms" className="text-sm">
+                <Label htmlFor="terms" className="text-sm text-orange-800">
                   I agree to the terms and conditions
                 </Label>
               </div>
@@ -141,8 +143,7 @@ const ProfileSetup = () => {
               <Button 
                 onClick={handleComplete}
                 disabled={!acceptedTerms || loading}
-                className="w-full" 
-                variant="hero"
+                className="w-full bg-orange-600 hover:bg-orange-700 text-white shadow-md disabled:bg-orange-300" 
               >
                 {loading ? 'Setting up...' : 'Complete Setup'}
               </Button>
@@ -159,6 +160,7 @@ const ProfileSetup = () => {
       onBack={() => {
         if (step === 'terms') setStep('name');
       }}
+      theme="driver"
     >
       <div className="p-4">
         {/* Progress indicator */}

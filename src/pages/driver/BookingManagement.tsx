@@ -125,31 +125,31 @@ const BookingManagement = () => {
   const completedBookings = bookings.filter(b => b.status === 'completed');
 
   return (
-    <MobileLayout title="Booking Management" showBack>
-      <div className="p-4 space-y-6">
+    <MobileLayout title="Booking Management" showBack theme="driver">
+      <div className="p-4 space-y-6 min-h-screen">
         {/* Stats Cards */}
         <div className="grid grid-cols-2 gap-4">
-          <Card>
+          <Card className="border-orange-200 shadow-md bg-white">
             <CardContent className="p-4">
               <div className="flex items-center gap-2">
-                <Users className="w-5 h-5 text-primary" />
+                <Users className="w-5 h-5 text-orange-600" />
                 <div>
-                  <div className="text-2xl font-bold">
+                  <div className="text-2xl font-bold text-orange-900">
                     {availability?.availableSeats || 0}
                   </div>
-                  <div className="text-sm text-muted-foreground">Available Seats</div>
+                  <div className="text-sm text-orange-600">Available Seats</div>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className="border-orange-200 shadow-md bg-white">
             <CardContent className="p-4">
               <div className="flex items-center gap-2">
                 <Calendar className="w-5 h-5 text-green-600" />
                 <div>
-                  <div className="text-2xl font-bold">{pendingBookings.length}</div>
-                  <div className="text-sm text-muted-foreground">Pending Requests</div>
+                  <div className="text-2xl font-bold text-orange-900">{pendingBookings.length}</div>
+                  <div className="text-sm text-orange-600">Pending Requests</div>
                 </div>
               </div>
             </CardContent>
@@ -158,8 +158,8 @@ const BookingManagement = () => {
 
         {/* Booking Tabs */}
         <Tabs defaultValue="pending" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="pending" className="relative">
+          <TabsList className="grid w-full grid-cols-3 bg-orange-100">
+            <TabsTrigger value="pending" className="relative data-[state=active]:bg-orange-600 data-[state=active]:text-white">
               Pending
               {pendingBookings.length > 0 && (
                 <Badge variant="destructive" className="absolute -top-2 -right-2 h-5 w-5 p-0 text-xs">
@@ -167,23 +167,23 @@ const BookingManagement = () => {
                 </Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="confirmed">
+            <TabsTrigger value="confirmed" className="data-[state=active]:bg-orange-600 data-[state=active]:text-white">
               Confirmed ({confirmedBookings.length})
             </TabsTrigger>
-            <TabsTrigger value="completed">
+            <TabsTrigger value="completed" className="data-[state=active]:bg-orange-600 data-[state=active]:text-white">
               Completed ({completedBookings.length})
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="pending" className="space-y-4">
             {loading ? (
-              <div className="text-center py-8 text-muted-foreground">
+              <div className="text-center py-8 text-orange-600">
                 Loading bookings...
               </div>
             ) : pendingBookings.length === 0 ? (
               <div className="text-center py-8">
-                <Clock className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">No pending booking requests</p>
+                <Clock className="w-12 h-12 text-orange-400 mx-auto mb-4" />
+                <p className="text-orange-600">No pending booking requests</p>
               </div>
             ) : (
               pendingBookings.map((booking) => (
@@ -202,8 +202,8 @@ const BookingManagement = () => {
           <TabsContent value="confirmed" className="space-y-4">
             {confirmedBookings.length === 0 ? (
               <div className="text-center py-8">
-                <Calendar className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">No confirmed bookings</p>
+                <Calendar className="w-12 h-12 text-orange-400 mx-auto mb-4" />
+                <p className="text-orange-600">No confirmed bookings</p>
               </div>
             ) : (
               confirmedBookings.map((booking) => (
@@ -222,8 +222,8 @@ const BookingManagement = () => {
           <TabsContent value="completed" className="space-y-4">
             {completedBookings.length === 0 ? (
               <div className="text-center py-8">
-                <TrendingUp className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">No completed trips yet</p>
+                <TrendingUp className="w-12 h-12 text-orange-400 mx-auto mb-4" />
+                <p className="text-orange-600">No completed trips yet</p>
               </div>
             ) : (
               completedBookings.map((booking) => (

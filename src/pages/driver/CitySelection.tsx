@@ -59,25 +59,26 @@ const CitySelection = () => {
       title="Select City" 
       showBack={true} 
       onBack={() => navigate('/driver/profile-setup')}
+      theme="driver"
     >
       <div className="p-4">
-        <Card className="border-border">
-          <CardHeader>
+        <Card className="border-orange-200 shadow-lg">
+          <CardHeader className="bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-t-lg">
             <CardTitle className="text-center">Choose Your City</CardTitle>
-            <p className="text-sm text-muted-foreground text-center">
+            <p className="text-sm text-orange-100 text-center">
               Select the city where you'll provide transportation services
             </p>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="city">Select City</Label>
+              <Label htmlFor="city" className="text-orange-800 font-medium">Select City</Label>
               <Select value={selectedCity} onValueChange={setSelectedCity}>
-                <SelectTrigger className="w-full">
+                <SelectTrigger className="w-full border-orange-200 focus:border-orange-400 focus:ring-orange-200">
                   <SelectValue placeholder="Choose your city" />
                 </SelectTrigger>
-                <SelectContent className="bg-background border-border z-50">
+                <SelectContent className="bg-background border-orange-200 z-50">
                   {cities.map((city) => (
-                    <SelectItem key={city} value={city} className="hover:bg-accent">
+                    <SelectItem key={city} value={city} className="hover:bg-orange-50 focus:bg-orange-50">
                       {city}
                     </SelectItem>
                   ))}
@@ -88,8 +89,7 @@ const CitySelection = () => {
             <Button 
               onClick={handleContinue}
               disabled={!selectedCity || loading}
-              className="w-full mt-6" 
-              variant="hero"
+              className="w-full mt-6 bg-orange-600 hover:bg-orange-700 text-white disabled:bg-orange-300"
             >
               {loading ? 'Saving...' : 'Continue'}
             </Button>

@@ -133,45 +133,18 @@ const AddChildLocations = () => {
     >
       <div className="p-4 space-y-6">
         {/* Child Info Summary */}
-        <Card className="shadow-lg rounded-2xl border border-border/50">
-          <CardHeader className="pb-3">
-            <CardTitle className="font-nunito text-lg text-center">
+        <Card className="shadow-lg rounded-2xl border border-blue-100 bg-white">
+          <CardHeader className="pb-3 bg-gradient-to-r from-blue-50 to-white rounded-t-2xl">
+            <CardTitle className="font-nunito text-lg text-center text-blue-900">
               Setting pickup and school locations for {childData.fullName}
             </CardTitle>
           </CardHeader>
         </Card>
 
-        {/* Location Status */}
-        <div className="grid grid-cols-2 gap-4">
-          <Card className={`shadow-lg rounded-2xl border ${startPoint ? 'border-green-500 bg-green-50' : 'border-border/50'}`}>
-            <CardContent className="p-4 text-center">
-              <div className={`w-8 h-8 rounded-full mx-auto mb-2 flex items-center justify-center ${startPoint ? 'bg-green-500 text-white' : 'bg-muted text-muted-foreground'}`}>
-                {startPoint ? <Check className="w-4 h-4" /> : <MapPin className="w-4 h-4" />}
-              </div>
-              <p className="font-medium text-sm">Pickup Point</p>
-              <p className="text-xs text-muted-foreground mt-1">
-                {startPoint ? 'Set' : 'Not set'}
-              </p>
-            </CardContent>
-          </Card>
-
-          <Card className={`shadow-lg rounded-2xl border ${endPoint ? 'border-blue-500 bg-blue-50' : 'border-border/50'}`}>
-            <CardContent className="p-4 text-center">
-              <div className={`w-8 h-8 rounded-full mx-auto mb-2 flex items-center justify-center ${endPoint ? 'bg-blue-500 text-white' : 'bg-muted text-muted-foreground'}`}>
-                {endPoint ? <Check className="w-4 h-4" /> : <MapPin className="w-4 h-4" />}
-              </div>
-              <p className="font-medium text-sm">School Location</p>
-              <p className="text-xs text-muted-foreground mt-1">
-                {endPoint ? 'Set' : 'Not set'}
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-
         {/* Map Component */}
-        <Card className="shadow-lg rounded-2xl border border-border/50">
-          <CardHeader className="pb-4">
-            <CardTitle className="font-nunito text-lg">
+        <Card className="shadow-lg rounded-2xl border border-blue-200 bg-white">
+          <CardHeader className="pb-4 bg-gradient-to-r from-blue-50 to-white rounded-t-2xl">
+            <CardTitle className="font-nunito text-lg text-blue-900">
               Set Route on Map
             </CardTitle>
           </CardHeader>

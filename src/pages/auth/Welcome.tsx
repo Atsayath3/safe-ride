@@ -79,8 +79,8 @@ const Welcome = () => {
           </Button>
           
           <Button 
-            onClick={() => navigate('/admin/dashboard')}
-            className="w-full h-12 text-base font-semibold bg-blue-600 hover:bg-blue-700 text-white border-none shadow-sm"
+            onClick={() => navigate('/admin/login')}
+            className="w-full h-12 text-base font-semibold bg-red-600 hover:bg-red-700 text-white border-none shadow-sm"
             variant="default"
           >
             Admin Access

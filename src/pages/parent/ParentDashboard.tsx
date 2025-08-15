@@ -157,20 +157,21 @@ const ParentDashboard = () => {
   return (
     <MobileLayout
       title={`Welcome, ${userProfile?.firstName || 'Parent'}!`}
+      theme="parent"
     >
-      <div className="p-4 space-y-6 pb-20">
+      <div className="p-4 space-y-6 pb-20 min-h-screen">
         {/* Header with Add Child Button - Always visible */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between bg-white rounded-2xl p-4 shadow-lg border border-blue-100">
           <div>
-            <h2 className="font-nunito font-semibold text-xl">Your Children</h2>
-            <p className="text-muted-foreground text-sm">
+            <h2 className="font-nunito font-semibold text-xl text-blue-900">Your Children</h2>
+            <p className="text-blue-600 text-sm">
               {children.length > 0 ? `${children.length} child${children.length > 1 ? 'ren' : ''} registered` : 'No children added yet'}
             </p>
           </div>
           <Button
             onClick={handleAddChild}
             size="default"
-            className="rounded-xl font-medium px-4 py-2"
+            className="rounded-xl font-medium px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white"
           >
             <Plus className="h-4 w-4 mr-2" />
             Add Child
@@ -188,22 +189,22 @@ const ParentDashboard = () => {
           </div>
         ) : (
           <div className="flex-1 flex items-center justify-center">
-            <Card className="w-full max-w-sm mx-auto shadow-lg border-2 border-dashed border-muted-foreground/20">
+            <Card className="w-full max-w-sm mx-auto shadow-xl border-2 border-dashed border-blue-200 bg-white">
               <CardContent className="flex flex-col items-center justify-center p-8 text-center space-y-4">
-                <div className="w-16 h-16 rounded-full bg-secondary/10 flex items-center justify-center">
-                  <Plus className="h-8 w-8 text-secondary" />
+                <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center">
+                  <Plus className="h-8 w-8 text-blue-600" />
                 </div>
                 <div className="space-y-2">
-                  <h3 className="font-nunito font-semibold text-lg text-foreground">
+                  <h3 className="font-nunito font-semibold text-lg text-blue-900">
                     No child added yet
                   </h3>
-                  <p className="text-muted-foreground text-sm">
+                  <p className="text-blue-600 text-sm">
                     Add your child's details to start booking safe rides
                   </p>
                 </div>
                 <Button 
                   onClick={handleAddChild}
-                  className="w-full font-medium rounded-xl"
+                  className="w-full font-medium rounded-xl bg-blue-600 hover:bg-blue-700 text-white"
                   size="lg"
                 >
                   Add Child

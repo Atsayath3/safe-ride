@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { collection, query, where, getDocs, updateDoc, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import MobileLayout from '@/components/mobile/MobileLayout';
@@ -12,13 +13,32 @@ import { UserProfile } from '@/contexts/AuthContext';
 import { CheckCircle, XCircle, Clock, User, Car, FileText, Eye } from 'lucide-react';
 
 const AdminDashboard = () => {
-  const { userProfile, logout } = useAuth();
+  const { userProfile, logout, currentUser } = useAuth();
+  const navigate = useNavigate();
   const [pendingDrivers, setPendingDrivers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Redirect to login if not authenticated or not admin
   useEffect(() => {
-    fetchPendingDrivers();
-  }, []);
+    if (!currentUser) {
+      navigate('/admin/login');
+      return;
+    }
+
+    if (userProfile && userProfile.role !== 'admin') {
+      toast({
+        title: "Access Denied",
+        description: "You don't have admin privileges",
+        variant: "destructive"
+      });
+      navigate('/admin/login');
+      return;
+    }
+
+    if (userProfile?.role === 'admin') {
+      fetchPendingDrivers();
+    }
+  }, [currentUser, userProfile, navigate]);
 
   const fetchPendingDrivers = async () => {
     try {
@@ -100,18 +120,37 @@ const AdminDashboard = () => {
     );
   }
 
+  // Show loading while checking authentication
+  if (!userProfile) {
+    return (
+      <MobileLayout title="Admin Dashboard">
+        <div className="p-4 flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+            <p className="mt-2 text-muted-foreground">Loading...</p>
+          </div>
+        </div>
+      </MobileLayout>
+    );
+  }
+
+  // Ensure user is admin
+  if (userProfile.role !== 'admin') {
+    return null; // Will be redirected by useEffect
+  }
+
   return (
-    <MobileLayout title="Admin Dashboard">
+    <MobileLayout title="Admin Dashboard" theme="admin">
       <div className="p-4 space-y-4">
         {/* Header */}
         <div className="flex justify-between items-center">
           <div>
-            <h2 className="text-lg font-semibold">Welcome Admin</h2>
-            <p className="text-sm text-muted-foreground">
+            <h2 className="text-lg font-semibold text-red-900">Welcome Admin</h2>
+            <p className="text-sm text-red-600">
               {pendingDrivers.length} drivers awaiting approval
             </p>
           </div>
-          <Button variant="ghost" onClick={logout} size="sm">
+          <Button variant="ghost" onClick={logout} size="sm" className="text-red-700 hover:bg-red-50">
             Logout
           </Button>
         </div>

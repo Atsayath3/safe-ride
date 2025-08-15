@@ -85,13 +85,14 @@ const RouteSetup = () => {
       title="Set Your Route" 
       showBack={true} 
       onBack={() => navigate('/driver/dashboard')}
+      theme="driver"
     >
-      <div className="p-4 space-y-6">
+      <div className="p-4 space-y-6 min-h-screen">
         {/* Google Maps Integration */}
-        <Card className="border-border">
-          <CardHeader>
-            <CardTitle className="text-lg">Google Maps Setup</CardTitle>
-            <p className="text-sm text-muted-foreground">
+        <Card className="border-orange-200 shadow-lg bg-white">
+          <CardHeader className="bg-gradient-to-r from-orange-50 to-white rounded-t-lg">
+            <CardTitle className="text-lg text-orange-900">Google Maps Setup</CardTitle>
+            <p className="text-sm text-orange-600">
               {!apiKey ? 'Enter your Google Maps API key to set your route' : 'Click on the map to set your pickup and drop-off points'}
             </p>
           </CardHeader>
@@ -113,15 +114,14 @@ const RouteSetup = () => {
           <Button 
             onClick={handleSaveRoute}
             disabled={loading || !startPoint || !endPoint}
-            className="w-full" 
-            variant="hero"
+            className="w-full bg-orange-600 hover:bg-orange-700 text-white shadow-md rounded-xl" 
           >
             {loading ? 'Saving Route...' : 'Save Route'}
           </Button>
           
           {userProfile?.status !== 'approved' && (
-            <div className="bg-muted/50 p-4 rounded-lg">
-              <p className="text-sm text-muted-foreground text-center">
+            <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
+              <p className="text-sm text-orange-700 text-center">
                 ⚠️ You can set your route, but you'll need admin approval before accepting ride requests
               </p>
             </div>

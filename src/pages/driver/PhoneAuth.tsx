@@ -91,10 +91,11 @@ const PhoneAuth = () => {
       title="Driver Registration" 
       showBack={true} 
       onBack={() => navigate('/')}
+      theme="driver"
     >
       <div className="p-4">
-        <Card className="border-border">
-          <CardHeader>
+        <Card className="border-orange-200 shadow-lg">
+          <CardHeader className="bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-t-lg">
             <CardTitle className="text-center">
               {step === 'phone' ? 'Enter Your Phone Number' : 'Verify OTP'}
             </CardTitle>
@@ -103,16 +104,16 @@ const PhoneAuth = () => {
             {step === 'phone' ? (
               <>
                 <div className="space-y-2">
-                  <Label htmlFor="phone">Phone Number</Label>
+                  <Label htmlFor="phone" className="text-orange-800 font-medium">Phone Number</Label>
                   <Input
                     id="phone"
                     type="tel"
                     placeholder="+94 77 123 4567"
                     value={phoneNumber}
                     onChange={(e) => handlePhoneChange(e.target.value)}
-                    className="text-center text-lg"
+                    className="text-center text-lg border-orange-200 focus:border-orange-400 focus:ring-orange-200"
                   />
-                  <p className="text-xs text-muted-foreground text-center">
+                  <p className="text-xs text-orange-600 text-center">
                     Enter your Sri Lankan mobile number
                   </p>
                 </div>
@@ -120,8 +121,7 @@ const PhoneAuth = () => {
                 <Button 
                   onClick={handleSendOTP}
                   disabled={loading}
-                  className="w-full"
-                  variant="hero"
+                  className="w-full bg-orange-600 hover:bg-orange-700 text-white disabled:bg-orange-300"
                 >
                   {loading ? 'Sending...' : 'Send OTP'}
                 </Button>
@@ -129,17 +129,17 @@ const PhoneAuth = () => {
             ) : (
               <>
                 <div className="space-y-2">
-                  <Label htmlFor="otp">Enter OTP</Label>
+                  <Label htmlFor="otp" className="text-orange-800 font-medium">Enter OTP</Label>
                   <Input
                     id="otp"
                     type="text"
                     placeholder="123456"
                     value={otp}
                     onChange={(e) => setOtp(e.target.value)}
-                    className="text-center text-lg tracking-widest"
+                    className="text-center text-lg tracking-widest border-orange-200 focus:border-orange-400 focus:ring-orange-200"
                     maxLength={6}
                   />
-                  <p className="text-xs text-muted-foreground text-center">
+                  <p className="text-xs text-orange-600 text-center">
                     OTP sent to {displayPhone || phoneNumber}
                   </p>
                 </div>
@@ -147,8 +147,7 @@ const PhoneAuth = () => {
                 <Button 
                   onClick={handleVerifyOTP}
                   disabled={loading || otp.length !== 6}
-                  className="w-full"
-                  variant="hero"
+                  className="w-full bg-orange-600 hover:bg-orange-700 text-white disabled:bg-orange-300"
                 >
                   {loading ? 'Verifying...' : 'Verify OTP'}
                 </Button>
@@ -156,7 +155,7 @@ const PhoneAuth = () => {
                 <Button 
                   variant="ghost" 
                   onClick={() => setStep('phone')}
-                  className="w-full"
+                  className="w-full text-orange-700 hover:bg-orange-50"
                 >
                   Change Phone Number
                 </Button>

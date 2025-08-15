@@ -65,19 +65,20 @@ const VehicleSetup = () => {
       title="Vehicle Details" 
       showBack={true} 
       onBack={() => navigate('/driver/city-selection')}
+      theme="driver"
     >
       <div className="p-4 space-y-4">
-        <Card className="border-border">
-          <CardHeader>
-            <CardTitle className="text-center">Vehicle Information</CardTitle>
+        <Card className="border-orange-200 shadow-lg bg-white">
+          <CardHeader className="bg-gradient-to-r from-orange-50 to-white rounded-t-lg">
+            <CardTitle className="text-center text-orange-900">Vehicle Information</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label>Vehicle Type</Label>
+              <Label className="text-orange-800">Vehicle Type</Label>
               <Select value={vehicleData.type} onValueChange={(value) => 
                 setVehicleData(prev => ({ ...prev, type: value }))
               }>
-                <SelectTrigger>
+                <SelectTrigger className="border-orange-200">
                   <SelectValue placeholder="Select vehicle type" />
                 </SelectTrigger>
                 <SelectContent>
@@ -91,32 +92,34 @@ const VehicleSetup = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="capacity">Seat Capacity</Label>
+              <Label htmlFor="capacity" className="text-orange-800">Seat Capacity</Label>
               <Input
                 id="capacity"
                 type="number"
                 placeholder="e.g., 15"
                 value={vehicleData.capacity}
                 onChange={(e) => setVehicleData(prev => ({ ...prev, capacity: e.target.value }))}
+                className="border-orange-200 focus:border-orange-400"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="model">Vehicle Model</Label>
+              <Label htmlFor="model" className="text-orange-800">Vehicle Model</Label>
               <Input
                 id="model"
                 placeholder="e.g., Ford Transit"
                 value={vehicleData.model}
                 onChange={(e) => setVehicleData(prev => ({ ...prev, model: e.target.value }))}
+                className="border-orange-200 focus:border-orange-400"
               />
             </div>
 
             <div className="space-y-2">
-              <Label>Vehicle Year</Label>
+              <Label className="text-orange-800">Vehicle Year</Label>
               <Select value={vehicleData.year} onValueChange={(value) => 
                 setVehicleData(prev => ({ ...prev, year: value }))
               }>
-                <SelectTrigger>
+                <SelectTrigger className="border-orange-200">
                   <SelectValue placeholder="Select year" />
                 </SelectTrigger>
                 <SelectContent>
@@ -130,30 +133,31 @@ const VehicleSetup = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="color">Vehicle Color</Label>
+              <Label htmlFor="color" className="text-orange-800">Vehicle Color</Label>
               <Input
                 id="color"
                 placeholder="e.g., Yellow"
                 value={vehicleData.color}
                 onChange={(e) => setVehicleData(prev => ({ ...prev, color: e.target.value }))}
+                className="border-orange-200 focus:border-orange-400"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="plateNumber">License Plate Number</Label>
+              <Label htmlFor="plateNumber" className="text-orange-800">License Plate Number</Label>
               <Input
                 id="plateNumber"
                 placeholder="e.g., ABC-1234"
                 value={vehicleData.plateNumber}
                 onChange={(e) => setVehicleData(prev => ({ ...prev, plateNumber: e.target.value }))}
+                className="border-orange-200 focus:border-orange-400"
               />
             </div>
 
             <Button 
               onClick={handleContinue}
               disabled={loading}
-              className="w-full mt-6" 
-              variant="hero"
+              className="w-full mt-6 bg-orange-600 hover:bg-orange-700 text-white shadow-md disabled:bg-orange-300" 
             >
               {loading ? 'Saving...' : 'Continue'}
             </Button>

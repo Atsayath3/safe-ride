@@ -22,6 +22,7 @@ import DriverProfile from "./pages/driver/Profile";
 import DriverRides from "./pages/driver/Rides";
 import DriverRequests from "./pages/driver/Requests";
 import BookingManagement from "./pages/driver/BookingManagement";
+import AdminLogin from "./pages/admin/AdminLogin";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import ParentLogin from "./pages/parent/ParentLogin";
 import ParentDashboard from "./pages/parent/ParentDashboard";
@@ -67,7 +68,7 @@ const App = () => (
             <Route path="/parent/edit-child/:childId" element={<EditChild />} />
             
             {/* Admin Routes */}
-            <Route path="/admin/login" element={<AdminDashboard />} />
+            <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
             
             <Route path="*" element={<NotFound />} />

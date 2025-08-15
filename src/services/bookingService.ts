@@ -14,14 +14,15 @@ import { Booking, BookingRequest, DriverAvailability } from '@/interfaces/bookin
 import { UserProfile } from '@/contexts/AuthContext';
 
 export class BookingService {
-  static async getAvailableDrivers(): Promise<UserProfile[]> {
+  static async getAvailableDrivers(childLocation?: { pickup: { lat: number; lng: number }, school: { lat: number; lng: number } }): Promise<UserProfile[]> {
     try {
       const driversRef = collection(db, 'users');
       const q = query(
         driversRef, 
         where('role', '==', 'driver'),
         where('status', '==', 'approved'),
-        where('profileComplete', '==', true)
+        where('profileComplete', '==', true),
+        where('bookingOpen', '==', true)
       );
       
       const snapshot = await getDocs(q);
@@ -31,13 +32,32 @@ export class BookingService {
         createdAt: doc.data().createdAt?.toDate(),
       })) as UserProfile[];
 
-      // Filter drivers with availability
+      // Filter drivers with availability, routes, and booking open
       const availableDrivers = [];
       for (const driver of drivers) {
-        const availability = await this.getDriverAvailability(driver.uid);
-        if (availability.availableSeats > 0) {
-          availableDrivers.push(driver);
+        // Check if driver has routes set
+        if (!driver.routes?.startPoint || !driver.routes?.endPoint) {
+          continue;
         }
+
+        // Check availability
+        const availability = await this.getDriverAvailability(driver.uid);
+        if (availability.availableSeats <= 0) {
+          continue;
+        }
+
+        // If child location provided, check route compatibility
+        if (childLocation) {
+          const routeCompatible = this.isRouteCompatible(
+            childLocation,
+            { startPoint: driver.routes.startPoint, endPoint: driver.routes.endPoint }
+          );
+          if (!routeCompatible) {
+            continue;
+          }
+        }
+
+        availableDrivers.push(driver);
       }
 
       return availableDrivers;
@@ -45,6 +65,31 @@ export class BookingService {
       console.error('Error fetching available drivers:', error);
       throw error;
     }
+  }
+
+  static isRouteCompatible(
+    childLocation: { pickup: { lat: number; lng: number }, school: { lat: number; lng: number } },
+    driverRoute: { startPoint: { lat: number; lng: number }, endPoint: { lat: number; lng: number } }
+  ): boolean {
+    // Calculate distance between child pickup and driver start (should be close)
+    const pickupDistance = this.calculateDistance(childLocation.pickup, driverRoute.startPoint);
+    
+    // Calculate distance between child school and driver end (should be close)
+    const schoolDistance = this.calculateDistance(childLocation.school, driverRoute.endPoint);
+    
+    // Consider compatible if both distances are within 10km
+    return pickupDistance <= 10 && schoolDistance <= 10;
+  }
+
+  static calculateDistance(point1: { lat: number; lng: number }, point2: { lat: number; lng: number }): number {
+    const R = 6371; // Earth's radius in kilometers
+    const dLat = (point2.lat - point1.lat) * Math.PI / 180;
+    const dLon = (point2.lng - point1.lng) * Math.PI / 180;
+    const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+              Math.cos(point1.lat * Math.PI / 180) * Math.cos(point2.lat * Math.PI / 180) *
+              Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
   }
 
   static async getDriverAvailability(driverId: string): Promise<DriverAvailability> {

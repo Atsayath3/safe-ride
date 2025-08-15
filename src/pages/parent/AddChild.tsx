@@ -71,11 +71,12 @@ const AddChild = () => {
       title="Add Your Child's Details"
       showBack={true}
       onBack={handleBack}
+      theme="parent"
     >
-      <div className="p-4 space-y-6">
-        <Card className="shadow-lg rounded-2xl border border-border/50">
-          <CardHeader className="pb-4">
-            <CardTitle className="font-nunito text-xl text-center">
+      <div className="p-4 space-y-6 min-h-screen">
+        <Card className="shadow-xl rounded-2xl border border-blue-100 bg-white">
+          <CardHeader className="pb-4 bg-gradient-to-r from-blue-50 to-white rounded-t-2xl">
+            <CardTitle className="font-nunito text-xl text-center text-blue-900">
               Child Information
             </CardTitle>
           </CardHeader>
@@ -88,11 +89,11 @@ const AddChild = () => {
                   name="fullName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="font-medium">Full Name</FormLabel>
+                      <FormLabel className="font-medium text-blue-800">Full Name</FormLabel>
                       <FormControl>
                         <Input
                           placeholder="Enter child's full name"
-                          className="rounded-xl h-12"
+                          className="rounded-xl h-12 border-blue-200 focus:border-blue-400"
                           {...field}
                         />
                       </FormControl>
@@ -107,15 +108,15 @@ const AddChild = () => {
                   name="dateOfBirth"
                   render={({ field }) => (
                     <FormItem className="flex flex-col">
-                      <FormLabel className="font-medium">Date of Birth</FormLabel>
+                      <FormLabel className="font-medium text-blue-800">Date of Birth</FormLabel>
                       <Popover>
                         <PopoverTrigger asChild>
                           <FormControl>
                             <Button
                               variant="outline"
                               className={cn(
-                                "w-full h-12 rounded-xl text-left font-normal",
-                                !field.value && "text-muted-foreground"
+                                "w-full h-12 rounded-xl text-left font-normal border-blue-200 hover:bg-blue-50",
+                                !field.value && "text-blue-500"
                               )}
                             >
                               {field.value ? (
@@ -151,10 +152,10 @@ const AddChild = () => {
                   name="gender"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="font-medium">Gender</FormLabel>
+                      <FormLabel className="font-medium text-blue-800">Gender</FormLabel>
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
-                          <SelectTrigger className="rounded-xl h-12">
+                          <SelectTrigger className="rounded-xl h-12 border-blue-200">
                             <SelectValue placeholder="Select gender" />
                           </SelectTrigger>
                         </FormControl>
@@ -175,11 +176,11 @@ const AddChild = () => {
                   name="schoolName"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="font-medium">School Name</FormLabel>
+                      <FormLabel className="font-medium text-blue-800">School Name</FormLabel>
                       <FormControl>
                         <Input
                           placeholder="Enter school name"
-                          className="rounded-xl h-12"
+                          className="rounded-xl h-12 border-blue-200 focus:border-blue-400"
                           {...field}
                         />
                       </FormControl>
@@ -188,18 +189,17 @@ const AddChild = () => {
                   )}
                 />
 
-
                 {/* Student ID */}
                 <FormField
                   control={form.control}
                   name="studentId"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="font-medium">Student ID Number</FormLabel>
+                      <FormLabel className="font-medium text-blue-800">Student ID Number</FormLabel>
                       <FormControl>
                         <Input
                           placeholder="Enter student ID"
-                          className="rounded-xl h-12"
+                          className="rounded-xl h-12 border-blue-200 focus:border-blue-400"
                           {...field}
                         />
                       </FormControl>
@@ -210,7 +210,7 @@ const AddChild = () => {
 
                 <Button
                   type="submit"
-                  className="w-full h-12 rounded-xl font-semibold text-base mt-8"
+                  className="w-full h-12 rounded-xl font-semibold text-base mt-8 bg-blue-600 hover:bg-blue-700 text-white shadow-md"
                   disabled={isLoading}
                 >
                   {isLoading ? 'Processing...' : 'Add Locations'}

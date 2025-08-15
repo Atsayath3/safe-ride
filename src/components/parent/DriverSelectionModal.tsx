@@ -36,7 +36,12 @@ const DriverSelectionModal: React.FC<DriverSelectionModalProps> = ({
   const loadAvailableDrivers = async () => {
     setLoading(true);
     try {
-      const availableDrivers = await BookingService.getAvailableDrivers();
+      const childLocation = {
+        pickup: { lat: child.tripStartLocation.lat, lng: child.tripStartLocation.lng },
+        school: { lat: child.schoolLocation.lat, lng: child.schoolLocation.lng }
+      };
+      
+      const availableDrivers = await BookingService.getAvailableDrivers(childLocation);
       setDrivers(availableDrivers);
 
       // Load availability for each driver

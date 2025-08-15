@@ -159,11 +159,12 @@ const EditChild = () => {
         title="Edit Child" 
         showBack={true} 
         onBack={handleBack}
+        theme="parent"
       >
         <div className="p-4 flex items-center justify-center min-h-[400px]">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-            <p className="mt-2 text-muted-foreground">Loading child information...</p>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+            <p className="mt-2 text-blue-600">Loading child information...</p>
           </div>
         </div>
       </MobileLayout>
@@ -175,44 +176,45 @@ const EditChild = () => {
       title="Edit Child" 
       showBack={true} 
       onBack={handleBack}
+      theme="parent"
     >
-      <div className="p-4">
-        <Card className="shadow-lg border-border/50">
-          <CardHeader>
-            <CardTitle className="font-nunito text-xl text-center">
+      <div className="p-4 min-h-screen">
+        <Card className="shadow-xl border-blue-100 bg-white">
+          <CardHeader className="bg-gradient-to-r from-blue-50 to-white rounded-t-lg">
+            <CardTitle className="font-nunito text-xl text-center text-blue-900">
               Edit Child Information
             </CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
-                <Label htmlFor="fullName">Full Name *</Label>
+                <Label htmlFor="fullName" className="text-blue-800 font-medium">Full Name *</Label>
                 <Input
                   id="fullName"
                   type="text"
                   placeholder="Enter child's full name"
                   value={formData.fullName}
                   onChange={(e) => setFormData(prev => ({ ...prev, fullName: e.target.value }))}
-                  className="h-12"
+                  className="h-12 border-blue-200 focus:border-blue-400 rounded-xl"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="dateOfBirth">Date of Birth *</Label>
+                <Label htmlFor="dateOfBirth" className="text-blue-800 font-medium">Date of Birth *</Label>
                 <Input
                   id="dateOfBirth"
                   type="date"
                   value={formData.dateOfBirth}
                   onChange={(e) => setFormData(prev => ({ ...prev, dateOfBirth: e.target.value }))}
-                  className="h-12"
+                  className="h-12 border-blue-200 focus:border-blue-400 rounded-xl"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="gender">Gender *</Label>
+                <Label htmlFor="gender" className="text-blue-800 font-medium">Gender *</Label>
                 <select
                   id="gender"
-                  className="w-full h-12 rounded-md border border-input bg-background px-3 text-base"
+                  className="w-full h-12 rounded-xl border border-blue-200 bg-white px-3 text-base focus:outline-none focus:border-blue-400"
                   value={formData.gender}
                   onChange={(e) => setFormData(prev => ({ ...prev, gender: e.target.value as 'male' | 'female' | 'other' }))}
                 >
@@ -223,26 +225,26 @@ const EditChild = () => {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="schoolName">School Name *</Label>
+                <Label htmlFor="schoolName" className="text-blue-800 font-medium">School Name *</Label>
                 <Input
                   id="schoolName"
                   type="text"
                   placeholder="Enter school name"
                   value={formData.schoolName}
                   onChange={(e) => setFormData(prev => ({ ...prev, schoolName: e.target.value }))}
-                  className="h-12"
+                  className="h-12 border-blue-200 focus:border-blue-400 rounded-xl"
                 />
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="studentId">Student ID</Label>
+                <Label htmlFor="studentId" className="text-blue-800 font-medium">Student ID</Label>
                 <Input
                   id="studentId"
                   type="text"
                   placeholder="Enter student ID (optional)"
                   value={formData.studentId}
                   onChange={(e) => setFormData(prev => ({ ...prev, studentId: e.target.value }))}
-                  className="h-12"
+                  className="h-12 border-blue-200 focus:border-blue-400 rounded-xl"
                 />
               </div>
 
@@ -250,7 +252,7 @@ const EditChild = () => {
                 <Button 
                   type="submit" 
                   disabled={loading}
-                  className="w-full h-12 font-medium rounded-xl"
+                  className="w-full h-12 font-medium rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-md"
                   size="lg"
                 >
                   {loading ? 'Updating...' : 'Update Child Information'}
@@ -260,7 +262,7 @@ const EditChild = () => {
                   type="button"
                   variant="outline"
                   onClick={handleBack}
-                  className="w-full h-12 font-medium rounded-xl"
+                  className="w-full h-12 font-medium rounded-xl border-blue-200 text-blue-700 hover:bg-blue-50"
                 >
                   Cancel
                 </Button>

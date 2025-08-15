@@ -33,7 +33,7 @@ const BookingRequestCard: React.FC<BookingRequestCardProps> = ({
   };
 
   return (
-    <Card className="border border-border hover:shadow-md transition-shadow">
+    <Card className="border border-orange-200 hover:shadow-lg transition-shadow bg-white">
       <CardContent className="p-4">
         <div className="space-y-4">
           {/* Header with Status */}
@@ -41,7 +41,7 @@ const BookingRequestCard: React.FC<BookingRequestCardProps> = ({
             <Badge className={getStatusColor(booking.status)}>
               {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
             </Badge>
-            <div className="text-sm text-muted-foreground">
+            <div className="text-sm text-orange-600">
               {format(booking.rideDate, 'MMM dd, yyyy')}
             </div>
           </div>
@@ -49,20 +49,20 @@ const BookingRequestCard: React.FC<BookingRequestCardProps> = ({
           {/* Trip Details */}
           <div className="space-y-3">
             <div className="flex items-center gap-2">
-              <User className="w-4 h-4 text-muted-foreground" />
-              <span className="font-medium">Booking #{booking.id.slice(-6)}</span>
+              <User className="w-4 h-4 text-orange-600" />
+              <span className="font-medium text-orange-900">Booking #{booking.id.slice(-6)}</span>
             </div>
 
             <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-muted-foreground" />
-              <span className="text-sm">
+              <Calendar className="w-4 h-4 text-orange-600" />
+              <span className="text-sm text-orange-800">
                 {format(booking.rideDate, 'EEEE, MMMM dd, yyyy')}
               </span>
             </div>
 
             <div className="flex items-center gap-2">
-              <Clock className="w-4 h-4 text-muted-foreground" />
-              <span className="text-sm">
+              <Clock className="w-4 h-4 text-orange-600" />
+              <span className="text-sm text-orange-800">
                 {format(booking.rideDate, 'hh:mm a')}
               </span>
             </div>
@@ -71,8 +71,8 @@ const BookingRequestCard: React.FC<BookingRequestCardProps> = ({
               <div className="flex items-start gap-2">
                 <MapPin className="w-4 h-4 text-green-600 mt-0.5" />
                 <div className="flex-1">
-                  <div className="text-sm font-medium">Pickup</div>
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-sm font-medium text-orange-900">Pickup</div>
+                  <div className="text-sm text-orange-600">
                     {booking.pickupLocation.address}
                   </div>
                 </div>
@@ -81,8 +81,8 @@ const BookingRequestCard: React.FC<BookingRequestCardProps> = ({
               <div className="flex items-start gap-2">
                 <MapPin className="w-4 h-4 text-red-600 mt-0.5" />
                 <div className="flex-1">
-                  <div className="text-sm font-medium">Drop-off</div>
-                  <div className="text-sm text-muted-foreground">
+                  <div className="text-sm font-medium text-orange-900">Drop-off</div>
+                  <div className="text-sm text-orange-600">
                     {booking.dropoffLocation.address}
                   </div>
                 </div>
@@ -90,9 +90,9 @@ const BookingRequestCard: React.FC<BookingRequestCardProps> = ({
             </div>
 
             {booking.notes && (
-              <div className="bg-muted/50 rounded-lg p-3">
-                <div className="text-sm font-medium mb-1">Special Instructions</div>
-                <div className="text-sm text-muted-foreground">{booking.notes}</div>
+              <div className="bg-orange-50 rounded-lg p-3 border border-orange-100">
+                <div className="text-sm font-medium mb-1 text-orange-900">Special Instructions</div>
+                <div className="text-sm text-orange-700">{booking.notes}</div>
               </div>
             )}
           </div>
@@ -106,7 +106,7 @@ const BookingRequestCard: React.FC<BookingRequestCardProps> = ({
                   size="sm"
                   onClick={() => onReject(booking.id)}
                   disabled={loading}
-                  className="flex-1"
+                  className="flex-1 border-orange-200 text-orange-700 hover:bg-orange-50"
                 >
                   Decline
                 </Button>
@@ -114,7 +114,7 @@ const BookingRequestCard: React.FC<BookingRequestCardProps> = ({
                   size="sm"
                   onClick={() => onAccept(booking.id)}
                   disabled={loading}
-                  className="flex-1"
+                  className="flex-1 bg-orange-600 hover:bg-orange-700 text-white"
                 >
                   Accept
                 </Button>
@@ -126,14 +126,14 @@ const BookingRequestCard: React.FC<BookingRequestCardProps> = ({
                 size="sm"
                 onClick={() => onComplete(booking.id)}
                 disabled={loading}
-                className="w-full"
+                className="w-full bg-orange-600 hover:bg-orange-700 text-white"
               >
                 Mark as Completed
               </Button>
             )}
 
             {(booking.status === 'cancelled' || booking.status === 'completed') && (
-              <div className="w-full text-center text-sm text-muted-foreground py-2">
+              <div className="w-full text-center text-sm text-orange-600 py-2">
                 {booking.status === 'completed' ? 'Trip Completed' : 'Booking Cancelled'}
               </div>
             )}

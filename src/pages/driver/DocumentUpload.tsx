@@ -171,15 +171,16 @@ const DocumentUpload = () => {
       title={documentLabels[documentType!] || 'Upload Document'} 
       showBack={true} 
       onBack={() => navigate('/driver/welcome')}
+      theme="driver"
     >
       <div className="p-4">
-        <Card className="border-border">
-          <CardHeader>
+        <Card className="border-orange-200 shadow-lg">
+          <CardHeader className="bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-t-lg">
             <CardTitle className="text-center">
               Upload {documentLabels[documentType!]}
             </CardTitle>
             {isProfilePicture && (
-              <p className="text-sm text-muted-foreground text-center">
+              <p className="text-sm text-orange-100 text-center">
                 Profile pictures must be taken live using the camera
               </p>
             )}
@@ -191,7 +192,7 @@ const DocumentUpload = () => {
                   <img 
                     src={uploadedFile} 
                     alt="Uploaded document" 
-                    className="w-full h-48 object-cover rounded-lg border border-border"
+                    className="w-full h-48 object-cover rounded-lg border border-orange-200"
                   />
                   <div className="absolute top-2 right-2 bg-green-500 rounded-full p-1">
                     <CheckCircle className="h-4 w-4 text-white" />
@@ -202,14 +203,13 @@ const DocumentUpload = () => {
                   <Button 
                     variant="outline" 
                     onClick={() => setUploadedFile(null)}
-                    className="flex-1"
+                    className="flex-1 border-orange-300 text-orange-700 hover:bg-orange-50"
                   >
                     Retake
                   </Button>
                   <Button 
-                    variant="hero" 
                     onClick={handleComplete}
-                    className="flex-1"
+                    className="flex-1 bg-orange-600 hover:bg-orange-700 text-white"
                   >
                     Complete
                   </Button>
@@ -220,8 +220,7 @@ const DocumentUpload = () => {
                 <Button 
                   onClick={takePicture}
                   disabled={uploading}
-                  className="w-full h-16" 
-                  variant="hero"
+                  className="w-full h-16 bg-orange-600 hover:bg-orange-700 text-white disabled:bg-orange-300"
                 >
                   <Camera className="mr-2 h-5 w-5" />
                   {uploading ? 'Taking Photo...' : 'Take Photo'}
@@ -232,14 +231,14 @@ const DocumentUpload = () => {
                     onClick={uploadFromGallery}
                     disabled={uploading}
                     variant="outline"
-                    className="w-full h-16"
+                    className="w-full h-16 border-orange-300 text-orange-700 hover:bg-orange-50 disabled:bg-gray-100 disabled:text-gray-400"
                   >
                     <Upload className="mr-2 h-5 w-5" />
                     Upload from Gallery
                   </Button>
                 )}
                 
-                <div className="text-xs text-muted-foreground text-center space-y-1">
+                <div className="text-xs text-orange-600 text-center space-y-1">
                   <p>• Make sure the document is clearly visible</p>
                   <p>• Ensure good lighting</p>
                   <p>• Avoid glare and shadows</p>
