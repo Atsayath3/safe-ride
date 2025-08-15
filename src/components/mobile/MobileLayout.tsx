@@ -63,7 +63,7 @@ const MobileLayout: React.FC<MobileLayoutProps> = ({
       {/* Full viewport background with theme */}
       <div className={`fixed inset-0 ${themeClasses.background} -z-10`}></div>
       
-      <div className={`min-h-screen flex flex-col max-w-md mx-auto relative ${className} border-x border-gray-200/30 shadow-2xl bg-white`}>
+      <div className={`min-h-screen flex flex-col max-w-md mx-auto relative ${className} border-x border-gray-200/30 shadow-2xl ${themeClasses.background}`}>
         {/* Header */}
         <header className={`${themeClasses.header} border-b px-4 py-3 flex items-center justify-between min-h-[60px] shadow-sm`}>
           <div className="flex items-center gap-3">

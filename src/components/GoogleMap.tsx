@@ -18,6 +18,8 @@ interface MapPoint {
 
 interface GoogleMapProps {
   onRouteSet: (startPoint: MapPoint, endPoint: MapPoint) => void;
+  onStartPointSet?: (point: MapPoint) => void;
+  onEndPointSet?: (point: MapPoint) => void;
   initialStart?: MapPoint;
   initialEnd?: MapPoint;
   apiKey: string;
@@ -25,6 +27,8 @@ interface GoogleMapProps {
 
 const GoogleMap: React.FC<GoogleMapProps> = ({ 
   onRouteSet, 
+  onStartPointSet,
+  onEndPointSet,
   initialStart, 
   initialEnd, 
   apiKey 
@@ -40,6 +44,14 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
   const [endPoint, setEndPoint] = useState<MapPoint | null>(initialEnd || null);
   const [isSettingStart, setIsSettingStart] = useState(true);
   const [isLoaded, setIsLoaded] = useState(false);
+  const isSettingStartRef = useRef(true);
+  const autocompleteRef = useRef<any>(null);
+
+  // Keep ref in sync with state
+  useEffect(() => {
+    isSettingStartRef.current = isSettingStart;
+    console.log('Mode changed to:', isSettingStart ? 'pickup' : 'drop-off');
+  }, [isSettingStart]);
 
   useEffect(() => {
     const loadGoogleMaps = () => {
@@ -63,10 +75,12 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
     if (!isLoaded || !mapRef.current) return;
     
     // Prevent duplicate map initialization
-    if (mapRef.current.querySelector('.gm-style')) {
+    if (mapRef.current.querySelector('.gm-style') || map) {
       console.log('Map already initialized, skipping...');
       return;
     }
+
+    console.log('Initializing new map instance...');
 
     try {
       const google = (window as any).google;
@@ -74,6 +88,9 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
         console.error('Google Maps not loaded');
         return;
       }
+
+      // Clear any existing content in the map container
+      mapRef.current.innerHTML = '';
 
       // Initialize map with Sri Lankan center
       const mapInstance = new google.maps.Map(mapRef.current, {
@@ -86,14 +103,17 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
       });
 
       mapInstance.addListener('click', (event: any) => {
+        console.log('Map clicked, isSettingStart:', isSettingStartRef.current);
         const location: MapPoint = {
           lat: event.latLng.lat(),
           lng: event.latLng.lng(),
           address: `${event.latLng.lat()}, ${event.latLng.lng()}`
         };
 
-        if (isSettingStart) {
+        if (isSettingStartRef.current) {
+          console.log('Setting start point:', location);
           setStartPoint(location);
+          onStartPointSet?.(location);
           if (startMarker) {
             startMarker.setMap(null);
           }
@@ -105,7 +125,9 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
           });
           setStartMarker(newMarker);
         } else {
+          console.log('Setting end point:', location);
           setEndPoint(location);
+          onEndPointSet?.(location);
           if (endMarker) {
             endMarker.setMap(null);
           }
@@ -135,8 +157,11 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
           fields: ['place_id', 'geometry', 'name', 'formatted_address'],
         });
 
+        autocompleteRef.current = autocomplete;
+
         autocomplete.addListener('place_changed', () => {
           const place = autocomplete.getPlace();
+          console.log('Place selected, isSettingStart:', isSettingStartRef.current);
           if (place.geometry && place.geometry.location) {
             const location: MapPoint = {
               lat: place.geometry.location.lat(),
@@ -144,8 +169,10 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
               address: place.formatted_address || place.name || ''
             };
             
-            if (isSettingStart) {
+            if (isSettingStartRef.current) {
+              console.log('Setting start point from search:', location);
               setStartPoint(location);
+              onStartPointSet?.(location);
               if (startMarker) {
                 startMarker.setMap(null);
               }
@@ -157,7 +184,9 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
               });
               setStartMarker(newMarker);
             } else {
+              console.log('Setting end point from search:', location);
               setEndPoint(location);
+              onEndPointSet?.(location);
               if (endMarker) {
                 endMarker.setMap(null);
               }
@@ -182,7 +211,73 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
     } catch (error) {
       console.error('Error initializing Google Map:', error);
     }
-  }, [isLoaded, isSettingStart]);
+  }, [isLoaded]);
+
+  // Recreate autocomplete listener when mode changes to fix closure issue
+  useEffect(() => {
+    if (!map || !autocompleteRef.current) return;
+
+    console.log('Recreating autocomplete listener for mode:', isSettingStart ? 'pickup' : 'drop-off');
+    
+    const google = (window as any).google;
+    if (!google || !google.maps) return;
+
+    // Clear existing listeners
+    if (autocompleteRef.current) {
+      google.maps.event.clearInstanceListeners(autocompleteRef.current);
+    }
+
+    const searchInput = document.getElementById('location-search') as HTMLInputElement;
+    if (searchInput && autocompleteRef.current) {
+      autocompleteRef.current.addListener('place_changed', () => {
+        const place = autocompleteRef.current.getPlace();
+        console.log('NEW Place selected, current mode:', isSettingStart ? 'pickup' : 'drop-off');
+        if (place.geometry && place.geometry.location) {
+          const location: MapPoint = {
+            lat: place.geometry.location.lat(),
+            lng: place.geometry.location.lng(),
+            address: place.formatted_address || place.name || ''
+          };
+          
+          if (isSettingStart) {
+            console.log('NEW Setting start point from search:', location);
+            setStartPoint(location);
+            onStartPointSet?.(location);
+            if (startMarker) {
+              startMarker.setMap(null);
+            }
+            const newMarker = new google.maps.Marker({
+              position: { lat: location.lat, lng: location.lng },
+              map: map,
+              title: 'Start Location',
+              icon: 'http://maps.google.com/mapfiles/ms/icons/green-dot.png'
+            });
+            setStartMarker(newMarker);
+          } else {
+            console.log('NEW Setting end point from search:', location);
+            setEndPoint(location);
+            onEndPointSet?.(location);
+            if (endMarker) {
+              endMarker.setMap(null);
+            }
+            const newMarker = new google.maps.Marker({
+              position: { lat: location.lat, lng: location.lng },
+              map: map,
+              title: 'End Location',
+              icon: 'http://maps.google.com/mapfiles/ms/icons/red-dot.png'
+            });
+            setEndMarker(newMarker);
+          }
+          
+          map.setCenter(location);
+          map.setZoom(15);
+          
+          // Update search input with selected place
+          searchInput.value = location.address;
+        }
+      });
+    }
+  }, [isSettingStart, map, startMarker, endMarker]);
 
   // Update markers when points change
   useEffect(() => {
@@ -242,6 +337,15 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
     }
   }, [map, startPoint, endPoint, directionsService, directionsRenderer]);
 
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (startMarker) startMarker.setMap(null);
+      if (endMarker) endMarker.setMap(null);
+      if (directionsRenderer) directionsRenderer.setMap(null);
+    };
+  }, []);
+
   const handleConfirmRoute = () => {
     if (startPoint && endPoint) {
       onRouteSet(startPoint, endPoint);
@@ -283,9 +387,18 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
         </div>
       </div>
 
-      <div className="flex gap-3 my-6">
+      {/* Debug Info */}
+      <div className="mb-4 p-2 bg-gray-100 rounded text-xs text-gray-600">
+        Current mode: {isSettingStart ? 'Setting Pickup Point' : 'Setting Drop-off Point'}
+      </div>
+
+      <div className="flex gap-3 my-6 relative z-10">
         <button
-          onClick={() => setIsSettingStart(true)}
+          onClick={() => {
+            console.log('Setting pickup mode');
+            setIsSettingStart(true);
+            isSettingStartRef.current = true;
+          }}
           className={`flex-1 px-4 py-2.5 text-sm font-semibold rounded-lg border-2 transition-all duration-200 ${
             isSettingStart 
               ? 'bg-blue-600 text-white border-blue-600 shadow-lg hover:bg-blue-700 transform hover:scale-[1.02]' 
@@ -295,7 +408,11 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
           Pickup Point
         </button>
         <button
-          onClick={() => setIsSettingStart(false)}
+          onClick={() => {
+            console.log('Setting drop-off mode');
+            setIsSettingStart(false);
+            isSettingStartRef.current = false;
+          }}
           className={`flex-1 px-4 py-2.5 text-sm font-semibold rounded-lg border-2 transition-all duration-200 ${
             !isSettingStart 
               ? 'bg-blue-600 text-white border-blue-600 shadow-lg hover:bg-blue-700 transform hover:scale-[1.02]' 
@@ -312,7 +429,7 @@ const GoogleMap: React.FC<GoogleMapProps> = ({
         </button>
       </div>
       
-      <div ref={mapRef} className="h-80 w-full rounded-xl border-2 border-blue-200 shadow-lg bg-white overflow-hidden" style={{minHeight: '320px'}} />
+      <div ref={mapRef} className="h-80 w-full rounded-xl border-2 border-blue-200 shadow-lg bg-white overflow-hidden relative z-0" style={{minHeight: '320px'}} />
       
       {/* Location Status Display */}
       <div className="mt-4 space-y-2">

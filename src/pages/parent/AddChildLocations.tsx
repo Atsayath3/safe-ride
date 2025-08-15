@@ -67,6 +67,16 @@ const AddChildLocations = () => {
     handleSaveChild(start, end);
   };
 
+  const handleStartPointSet = (point: MapPoint) => {
+    console.log('Parent received start point:', point);
+    setStartPoint(point);
+  };
+
+  const handleEndPointSet = (point: MapPoint) => {
+    console.log('Parent received end point:', point);
+    setEndPoint(point);
+  };
+
   const handleSaveChild = async (pickupPoint: MapPoint, schoolPoint: MapPoint) => {
     if (!childData || !currentUser) return;
     setIsLoading(true);
@@ -117,9 +127,29 @@ const AddChildLocations = () => {
         title="Setup Google Maps"
         showBack={true}
         onBack={handleBack}
+        theme="parent"
       >
-        <div className="p-4">
-          <GoogleMapsKeyInput onKeySet={setApiKey} />
+        <div className="p-6">
+          <Card className="shadow-xl rounded-3xl border-0 bg-white/95 backdrop-blur-sm overflow-hidden">
+            <CardHeader className="pb-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
+              <div className="flex items-center justify-center gap-3">
+                <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
+                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v-2H7v-2H4a1 1 0 01-1-1v-4a1 1 0 011-1h3l7.257-4.257A6 6 0 0118 9z" />
+                  </svg>
+                </div>
+                <CardTitle className="font-bold text-xl text-center">
+                  Google Maps Setup
+                </CardTitle>
+              </div>
+              <p className="text-center text-blue-100 text-sm mt-2">
+                Configure your Google Maps API key to continue
+              </p>
+            </CardHeader>
+            <CardContent className="p-6">
+              <GoogleMapsKeyInput onKeySet={setApiKey} />
+            </CardContent>
+          </Card>
         </div>
       </MobileLayout>
     );
@@ -130,42 +160,67 @@ const AddChildLocations = () => {
       title="Set Child Locations"
       showBack={true}
       onBack={handleBack}
+      theme="parent"
     >
-      <div className="p-4 space-y-6">
-        {/* Child Info Summary */}
-        <Card className="shadow-lg rounded-2xl border border-blue-100 bg-white">
-          <CardHeader className="pb-3 bg-gradient-to-r from-blue-50 to-white rounded-t-2xl">
-            <CardTitle className="font-nunito text-lg text-center text-blue-900">
-              Setting pickup and school locations for {childData.fullName}
-            </CardTitle>
-          </CardHeader>
-        </Card>
-
+      <div className="p-6 space-y-8">
         {/* Map Component */}
-        <Card className="shadow-lg rounded-2xl border border-blue-200 bg-white">
-          <CardHeader className="pb-4 bg-gradient-to-r from-blue-50 to-white rounded-t-2xl">
-            <CardTitle className="font-nunito text-lg text-blue-900">
-              Set Route on Map
-            </CardTitle>
+        <Card className="shadow-xl rounded-3xl border-0 bg-white/95 backdrop-blur-sm overflow-hidden">
+          <CardHeader className="pb-4 bg-gradient-to-r from-blue-500 to-indigo-500 text-white">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
+                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-1.447-.894L15 4m0 13V4m0 0L9 7" />
+                </svg>
+              </div>
+              <CardTitle className="font-bold text-lg">
+                Interactive Route Map
+              </CardTitle>
+            </div>
+            <p className="text-blue-100 text-sm mt-1">
+              Click or search to set pickup and school locations
+            </p>
           </CardHeader>
-          <CardContent>
-            <GoogleMap
-              onRouteSet={handleRouteSet}
-              initialStart={startPoint || undefined}
-              initialEnd={endPoint || undefined}
-              apiKey={apiKey}
-            />
+          <CardContent className="p-6">
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-4">
+              <GoogleMap
+                onRouteSet={handleRouteSet}
+                onStartPointSet={handleStartPointSet}
+                onEndPointSet={handleEndPointSet}
+                initialStart={startPoint || undefined}
+                initialEnd={endPoint || undefined}
+                apiKey={apiKey}
+              />
+            </div>
           </CardContent>
         </Card>
 
-        {/* Instructions */}
-        <Card className="shadow-lg rounded-2xl border border-blue-200 bg-blue-50">
-          <CardContent className="p-4">
-            <p className="text-sm text-blue-700">
-              <strong>Instructions:</strong> Use the map above to set both pickup and school locations. 
-              You can search for locations or click directly on the map. Once both points are set, 
-              the route will be automatically confirmed and saved.
-            </p>
+        {/* Enhanced Instructions */}
+        <Card className="shadow-xl rounded-3xl border-0 bg-gradient-to-r from-blue-50 to-indigo-50 overflow-hidden">
+          <CardContent className="p-6">
+            <div className="flex items-start gap-4">
+              <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
+                <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div className="flex-1">
+                <h3 className="font-bold text-blue-900 text-lg mb-2">How to Set Locations</h3>
+                <div className="space-y-2 text-sm text-blue-700">
+                  <div className="flex items-start gap-2">
+                    <div className="w-1.5 h-1.5 bg-blue-400 rounded-full mt-2 flex-shrink-0"></div>
+                    <p><span className="font-semibold">Search:</span> Use the search bar to find specific addresses in Sri Lanka</p>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <div className="w-1.5 h-1.5 bg-blue-400 rounded-full mt-2 flex-shrink-0"></div>
+                    <p><span className="font-semibold">Click:</span> Tap directly on the map to set pickup and school locations</p>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <div className="w-1.5 h-1.5 bg-blue-400 rounded-full mt-2 flex-shrink-0"></div>
+                    <p><span className="font-semibold">Auto-save:</span> Route will be confirmed and saved automatically</p>
+                  </div>
+                </div>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
