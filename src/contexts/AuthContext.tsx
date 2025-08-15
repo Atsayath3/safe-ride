@@ -102,8 +102,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const checkExistingDriver = async (phoneNumber: string): Promise<UserProfile | null> => {
-  const usersRef = collection(db, 'parents');
-    const q = query(usersRef, where('phone', '==', phoneNumber), where('role', '==', 'driver'));
+    const usersRef = collection(db, 'drivers');
+    const q = query(usersRef, where('phone', '==', phoneNumber));
     const querySnapshot = await getDocs(q);
     
     if (!querySnapshot.empty) {
@@ -152,12 +152,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     if (existingProfile) {
       // Update the existing profile with the new Firebase UID
-  await updateDoc(doc(db, 'parents', existingProfile.uid), {
+      await updateDoc(doc(db, 'drivers', existingProfile.uid), {
         uid: result.user.uid
       });
       
       // Update the document ID to match the new UID
-  await setDoc(doc(db, 'parents', result.user.uid), {
+      await setDoc(doc(db, 'drivers', result.user.uid), {
         ...existingProfile,
         uid: result.user.uid
       });
@@ -166,35 +166,45 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const updateUserProfile = async (data: Partial<UserProfile>) => {
     if (!currentUser) throw new Error('No current user');
+    if (!userProfile) throw new Error('No user profile loaded');
     
-  const docRef = doc(db, 'parents', currentUser.uid);
+    // Determine the correct collection based on user role
+    const collection = userProfile.role === 'driver' ? 'drivers' : 
+                      userProfile.role === 'parent' ? 'parents' : 'users';
+    
+    const docRef = doc(db, collection, currentUser.uid);
     await updateDoc(docRef, data);
     
     // Update local state
     setUserProfile(prev => prev ? { ...prev, ...data } : null);
-  };
-
-  const fetchUserProfile = async (uid: string) => {
-    const docRef = doc(db, 'users', uid);
-    const docSnap = await getDoc(docRef);
+  };  const fetchUserProfile = async (uid: string) => {
+    // Try different collections based on user role
+    const collections = ['drivers', 'parents', 'users', 'admins'];
     
-    if (docSnap.exists()) {
-      const data = docSnap.data();
-      setUserProfile({
-        ...data,
-        createdAt: data.createdAt?.toDate() || new Date()
-      } as UserProfile);
-    } else {
-      // Create a basic profile if none exists
-      const basicProfile: UserProfile = {
-        uid,
-        role: 'driver',
-        profileComplete: false,
-        createdAt: new Date()
-      };
-      await setDoc(docRef, basicProfile);
-      setUserProfile(basicProfile);
+    for (const collectionName of collections) {
+      const docRef = doc(db, collectionName, uid);
+      const docSnap = await getDoc(docRef);
+      
+      if (docSnap.exists()) {
+        const data = docSnap.data();
+        setUserProfile({
+          ...data,
+          createdAt: data.createdAt?.toDate() || new Date()
+        } as UserProfile);
+        return;
+      }
     }
+    
+    // If no profile exists in any collection, create a basic one in users
+    const basicProfile: UserProfile = {
+      uid,
+      role: 'driver',
+      profileComplete: false,
+      createdAt: new Date()
+    };
+    const docRef = doc(db, 'users', uid);
+    await setDoc(docRef, basicProfile);
+    setUserProfile(basicProfile);
   };
 
   useEffect(() => {
