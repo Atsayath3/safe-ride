@@ -1,0 +1,313 @@
+import { 
+  collection, 
+  doc, 
+  getDoc,
+  getDocs, 
+  setDoc, 
+  updateDoc, 
+  query, 
+  where, 
+  orderBy,
+  Timestamp 
+} from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { ActiveRide, RideChild } from '@/interfaces/ride';
+import { Booking } from '@/interfaces/booking';
+import { Child } from '@/pages/parent/ParentDashboard';
+
+export class RideService {
+  
+  /**
+   * Start a new ride for today and get assigned children
+   */
+  static async startRide(driverId: string): Promise<ActiveRide> {
+    try {
+      console.log('Starting ride for driver:', driverId);
+      
+      // Get today's date in YYYY-MM-DD format
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const tomorrow = new Date(today);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      
+      // Get all confirmed bookings for this driver for today
+      // Use simple query to avoid composite index requirements
+      console.log('Querying bookings by driverId only...');
+      
+      const simplifiedQuery = query(
+        collection(db, 'bookings'),
+        where('driverId', '==', driverId)
+      );
+      
+      const allBookingsSnapshot = await getDocs(simplifiedQuery);
+      console.log('Found', allBookingsSnapshot.size, 'total bookings for driver');
+      
+      // Filter by status and date in memory
+      const todayConfirmedBookings = allBookingsSnapshot.docs.filter(doc => {
+        const data = doc.data();
+        
+        // Check status first
+        if (data.status !== 'confirmed') {
+          return false;
+        }
+        
+        // Check date
+        let rideDate;
+        
+        if (data.rideDate?.toDate) {
+          rideDate = data.rideDate.toDate();
+        } else if (typeof data.rideDate === 'string') {
+          rideDate = new Date(data.rideDate);
+        } else if (data.rideDate instanceof Date) {
+          rideDate = data.rideDate;
+        } else {
+          console.warn('Invalid rideDate format for booking:', doc.id, data.rideDate);
+          return false;
+        }
+        
+        // Check if ride date is today
+        const rideDateStart = new Date(rideDate);
+        rideDateStart.setHours(0, 0, 0, 0);
+        
+        const isToday = rideDateStart.getTime() === today.getTime();
+        
+        if (isToday) {
+          console.log('Found confirmed booking for today:', doc.id, 'childId:', data.childId);
+        }
+        
+        return isToday;
+      });
+      
+      // Create a snapshot-like object for consistent handling
+      const bookingsSnapshot = {
+        docs: todayConfirmedBookings,
+        size: todayConfirmedBookings.length,
+        empty: todayConfirmedBookings.length === 0
+      };
+      
+      console.log('Found', bookingsSnapshot.size, 'confirmed bookings for today');
+      
+      if (bookingsSnapshot.empty) {
+        throw new Error('No confirmed bookings found for today');
+      }
+      
+      // Get children details for each booking
+      const rideChildren: RideChild[] = [];
+      
+      for (const bookingDoc of bookingsSnapshot.docs) {
+        const bookingData = bookingDoc.data();
+        const booking = { id: bookingDoc.id, ...bookingData } as any;
+        
+        // Convert Firestore timestamp to Date if necessary
+        if (booking.rideDate && typeof booking.rideDate.toDate === 'function') {
+          booking.rideDate = booking.rideDate.toDate();
+        } else if (typeof booking.rideDate === 'string') {
+          booking.rideDate = new Date(booking.rideDate);
+        }
+        
+        console.log('Processing booking:', booking.id, 'for child:', booking.childId);
+        
+        try {
+          // Get child details
+          const childDoc = await getDoc(doc(db, 'children', booking.childId));
+          if (childDoc.exists()) {
+            const childData = childDoc.data() as Child;
+            
+            const rideChild: RideChild = {
+              id: `${booking.id}_${booking.childId}`,
+              childId: booking.childId,
+              bookingId: booking.id,
+              fullName: childData.fullName,
+              pickupLocation: booking.pickupLocation,
+              dropoffLocation: booking.dropoffLocation,
+              scheduledPickupTime: booking.dailyTime || (
+                booking.rideDate instanceof Date 
+                  ? booking.rideDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })
+                  : new Date(booking.rideDate).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })
+              ),
+              status: 'pending'
+            };
+            
+            rideChildren.push(rideChild);
+            console.log('Added child to ride:', childData.fullName);
+          } else {
+            console.warn('Child document not found:', booking.childId);
+          }
+        } catch (childError) {
+          console.error('Error processing child:', booking.childId, childError);
+        }
+      }
+      
+      if (rideChildren.length === 0) {
+        console.log('No valid children found. Bookings processed:', bookingsSnapshot.size);
+        throw new Error('No valid children found for today\'s bookings. Please check if child records exist.');
+      }
+      
+      // Create active ride document
+      const rideId = `${driverId}_${today.toISOString().split('T')[0]}`;
+      console.log('Creating active ride with ID:', rideId);
+      
+      const activeRide: ActiveRide = {
+        id: rideId,
+        driverId,
+        date: today,
+        status: 'in_progress',
+        startedAt: new Date(),
+        children: rideChildren,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        totalChildren: rideChildren.length,
+        pickedUpCount: 0,
+        absentCount: 0
+      };
+      
+      // Save to Firestore
+      try {
+        await setDoc(doc(db, 'activeRides', rideId), {
+          ...activeRide,
+          date: Timestamp.fromDate(activeRide.date),
+          startedAt: Timestamp.fromDate(activeRide.startedAt!),
+          createdAt: Timestamp.fromDate(activeRide.createdAt),
+          updatedAt: Timestamp.fromDate(activeRide.updatedAt)
+        });
+        
+        console.log('Successfully created active ride:', rideId, 'with', rideChildren.length, 'children');
+        return activeRide;
+      } catch (saveError) {
+        console.error('Error saving active ride:', saveError);
+        throw new Error(`Failed to save ride data: ${saveError.message}`);
+      }
+      
+    } catch (error) {
+      console.error('Error starting ride:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Get current active ride for driver
+   */
+  static async getActiveRide(driverId: string): Promise<ActiveRide | null> {
+    try {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const rideId = `${driverId}_${today.toISOString().split('T')[0]}`;
+      
+      console.log('Looking for active ride with ID:', rideId);
+      
+      const rideDoc = await getDoc(doc(db, 'activeRides', rideId));
+      
+      if (rideDoc.exists()) {
+        const data = rideDoc.data();
+        const activeRide = {
+          ...data,
+          id: rideDoc.id,
+          date: data.date?.toDate ? data.date.toDate() : new Date(data.date),
+          startedAt: data.startedAt?.toDate ? data.startedAt.toDate() : (data.startedAt ? new Date(data.startedAt) : undefined),
+          completedAt: data.completedAt?.toDate ? data.completedAt.toDate() : (data.completedAt ? new Date(data.completedAt) : undefined),
+          createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(data.createdAt),
+          updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : new Date(data.updatedAt)
+        } as ActiveRide;
+        
+        console.log('Found active ride:', rideId, 'with status:', activeRide.status);
+        return activeRide;
+      }
+      
+      console.log('No active ride found for today');
+      return null;
+    } catch (error) {
+      console.error('Error getting active ride:', error);
+      return null; // Return null instead of throwing to allow graceful handling
+    }
+  }
+  
+  /**
+   * Update child pickup status
+   */
+  static async updateChildStatus(
+    rideId: string, 
+    childId: string, 
+    status: 'picked_up' | 'absent',
+    notes?: string
+  ): Promise<void> {
+    try {
+      console.log('Updating child status:', { rideId, childId, status });
+      
+      const rideDoc = await getDoc(doc(db, 'activeRides', rideId));
+      
+      if (!rideDoc.exists()) {
+        throw new Error('Active ride not found');
+      }
+      
+      const rideData = rideDoc.data();
+      const children = rideData.children as RideChild[];
+      
+      if (!Array.isArray(children)) {
+        throw new Error('Invalid children data in ride');
+      }
+      
+      // Find the specific child
+      const childIndex = children.findIndex(child => child.childId === childId);
+      if (childIndex === -1) {
+        throw new Error(`Child not found in ride: ${childId}`);
+      }
+      
+      // Update the specific child's status
+      const updatedChildren = [...children];
+      updatedChildren[childIndex] = {
+        ...updatedChildren[childIndex],
+        status,
+        notes,
+        ...(status === 'picked_up' ? { pickedUpAt: new Date() } : {})
+      };
+      
+      // Calculate updated counts
+      const pickedUpCount = updatedChildren.filter(child => child.status === 'picked_up').length;
+      const absentCount = updatedChildren.filter(child => child.status === 'absent').length;
+      
+      // Check if ride is completed (all children processed)
+      const allProcessed = updatedChildren.every(child => 
+        child.status === 'picked_up' || child.status === 'absent'
+      );
+      
+      const updates: any = {
+        children: updatedChildren.map(child => ({
+          ...child,
+          pickedUpAt: child.pickedUpAt ? Timestamp.fromDate(child.pickedUpAt) : null
+        })),
+        pickedUpCount,
+        absentCount,
+        updatedAt: Timestamp.fromDate(new Date())
+      };
+      
+      if (allProcessed) {
+        updates.status = 'completed';
+        updates.completedAt = Timestamp.fromDate(new Date());
+        console.log('Ride completed - all children processed');
+      }
+      
+      await updateDoc(doc(db, 'activeRides', rideId), updates);
+      console.log('Successfully updated child status');
+      
+    } catch (error) {
+      console.error('Error updating child status:', error);
+      throw error;
+    }
+  }
+  
+  /**
+   * Complete the ride manually
+   */
+  static async completeRide(rideId: string): Promise<void> {
+    try {
+      await updateDoc(doc(db, 'activeRides', rideId), {
+        status: 'completed',
+        completedAt: Timestamp.fromDate(new Date()),
+        updatedAt: Timestamp.fromDate(new Date())
+      });
+    } catch (error) {
+      console.error('Error completing ride:', error);
+      throw error;
+    }
+  }
+}
