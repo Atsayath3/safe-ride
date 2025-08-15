@@ -158,7 +158,8 @@ export class RideService {
         updatedAt: new Date(),
         totalChildren: rideChildren.length,
         pickedUpCount: 0,
-        absentCount: 0
+        absentCount: 0,
+        droppedOffCount: 0
       };
       
       // Save to Firestore
@@ -227,7 +228,7 @@ export class RideService {
   static async updateChildStatus(
     rideId: string, 
     childId: string, 
-    status: 'picked_up' | 'absent',
+    status: 'picked_up' | 'absent' | 'dropped_off',
     notes?: string
   ): Promise<void> {
     try {
@@ -236,6 +237,7 @@ export class RideService {
       const rideDoc = await getDoc(doc(db, 'activeRides', rideId));
       
       if (!rideDoc.exists()) {
+        console.error('Active ride document not found:', rideId);
         throw new Error('Active ride not found');
       }
       
@@ -254,29 +256,76 @@ export class RideService {
       
       // Update the specific child's status
       const updatedChildren = [...children];
+      const currentChild = updatedChildren[childIndex];
+      
+      console.log('Updating child:', currentChild.fullName, 'from', currentChild.status, 'to', status);
+      
       updatedChildren[childIndex] = {
-        ...updatedChildren[childIndex],
+        ...currentChild,
         status,
         notes,
-        ...(status === 'picked_up' ? { pickedUpAt: new Date() } : {})
+        ...(status === 'picked_up' ? { pickedUpAt: new Date() } : {}),
+        ...(status === 'dropped_off' ? { droppedOffAt: new Date() } : {})
       };
       
       // Calculate updated counts
       const pickedUpCount = updatedChildren.filter(child => child.status === 'picked_up').length;
       const absentCount = updatedChildren.filter(child => child.status === 'absent').length;
+      const droppedOffCount = updatedChildren.filter(child => child.status === 'dropped_off').length;
       
-      // Check if ride is completed (all children processed)
+      // Check if ride is completed (all children either dropped off or absent)
       const allProcessed = updatedChildren.every(child => 
-        child.status === 'picked_up' || child.status === 'absent'
+        child.status === 'dropped_off' || child.status === 'absent'
       );
       
       const updates: any = {
-        children: updatedChildren.map(child => ({
-          ...child,
-          pickedUpAt: child.pickedUpAt ? Timestamp.fromDate(child.pickedUpAt) : null
-        })),
+        children: updatedChildren.map(child => {
+          // Clean up the child object to ensure no undefined values
+          const cleanChild: any = {
+            id: child.id,
+            childId: child.childId,
+            bookingId: child.bookingId,
+            fullName: child.fullName,
+            pickupLocation: child.pickupLocation,
+            dropoffLocation: child.dropoffLocation,
+            scheduledPickupTime: child.scheduledPickupTime,
+            status: child.status
+          };
+          
+          // Handle timestamp fields - they could be Date objects or Firestore Timestamps
+          if (child.pickedUpAt) {
+            if (child.pickedUpAt instanceof Date) {
+              cleanChild.pickedUpAt = Timestamp.fromDate(child.pickedUpAt);
+            } else if (typeof child.pickedUpAt === 'object' && 'toDate' in child.pickedUpAt) {
+              // It's already a Firestore Timestamp
+              cleanChild.pickedUpAt = child.pickedUpAt;
+            } else {
+              // Try to create a new Date from it
+              cleanChild.pickedUpAt = Timestamp.fromDate(new Date(child.pickedUpAt as any));
+            }
+          }
+          
+          if (child.droppedOffAt) {
+            if (child.droppedOffAt instanceof Date) {
+              cleanChild.droppedOffAt = Timestamp.fromDate(child.droppedOffAt);
+            } else if (typeof child.droppedOffAt === 'object' && 'toDate' in child.droppedOffAt) {
+              // It's already a Firestore Timestamp
+              cleanChild.droppedOffAt = child.droppedOffAt;
+            } else {
+              // Try to create a new Date from it
+              cleanChild.droppedOffAt = Timestamp.fromDate(new Date(child.droppedOffAt as any));
+            }
+          }
+          
+          if (child.notes) {
+            cleanChild.notes = child.notes;
+          }
+          
+          return cleanChild;
+        }),
         pickedUpCount,
         absentCount,
+        droppedOffCount,
         updatedAt: Timestamp.fromDate(new Date())
       };
       
@@ -285,12 +334,14 @@ export class RideService {
         updates.completedAt = Timestamp.fromDate(new Date());
         console.log('Ride completed - all children processed');
       }
-      
+
+      console.log('About to update Firestore document');
       await updateDoc(doc(db, 'activeRides', rideId), updates);
-      console.log('Successfully updated child status');
+      console.log('Successfully updated child status in Firestore');
       
     } catch (error) {
       console.error('Error updating child status:', error);
+      console.error('Error details:', error.message, error.code);
       throw error;
     }
   }

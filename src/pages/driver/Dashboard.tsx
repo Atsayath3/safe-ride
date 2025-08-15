@@ -33,9 +33,16 @@ const DriverDashboard = () => {
     
     try {
       const ride = await RideService.getActiveRide(userProfile.uid);
-      setActiveRide(ride);
+      
+      // Only set active ride if it's actually in progress
+      if (ride && ride.status === 'in_progress') {
+        setActiveRide(ride);
+      } else {
+        setActiveRide(null);
+      }
     } catch (error) {
       console.error('Error loading active ride:', error);
+      setActiveRide(null);
     }
   };
 
@@ -188,16 +195,35 @@ const DriverDashboard = () => {
     }
   };
 
+  // Add safety check for userProfile
+  if (!userProfile) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-100">
+        <div className="bg-white p-8 rounded-lg shadow-lg text-center">
+          <h1 className="text-xl font-bold text-orange-600 mb-4">Loading...</h1>
+          <p className="text-gray-600 mb-4">Please wait while we load your dashboard.</p>
+          <button 
+            onClick={() => navigate('/driver/login')}
+            className="bg-orange-600 text-white px-4 py-2 rounded hover:bg-orange-700"
+          >
+            Go to Login
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <MobileLayout 
-      title="Driver Dashboard" 
-      showMenu={true}
-      onMenu={() => navigate('/driver/profile')}
-      theme="driver"
-    >
+    <div className="error-boundary">
+      <MobileLayout 
+        title="Driver Dashboard" 
+        showMenu={true}
+        onMenu={() => navigate('/driver/profile')}
+        theme="driver"
+      >
       <div className="p-4 space-y-6 min-h-screen">
         {/* Active Ride Section */}
-        {activeRide ? (
+        {activeRide && activeRide.status === 'in_progress' ? (
           <ActiveRideTracker 
             ride={activeRide} 
             onRideUpdate={handleRideUpdate}
@@ -391,6 +417,7 @@ const DriverDashboard = () => {
         )}
       </div>
     </MobileLayout>
+    </div>
   );
 };
 

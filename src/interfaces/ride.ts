@@ -33,6 +33,7 @@ export interface ActiveRide {
   totalChildren: number;
   pickedUpCount: number;
   absentCount: number;
+  droppedOffCount: number;
 }
 
 export interface RideStats {

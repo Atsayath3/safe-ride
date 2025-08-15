@@ -23,6 +23,16 @@ interface ActiveRideTrackerProps {
 const ActiveRideTracker: React.FC<ActiveRideTrackerProps> = ({ ride, onRideUpdate }) => {
   const [updatingChild, setUpdatingChild] = useState<string | null>(null);
 
+  // Helper function to convert Firestore Timestamp or Date to Date object
+  const toDate = (timestamp: any): Date => {
+    if (!timestamp) return new Date();
+    if (timestamp instanceof Date) return timestamp;
+    if (timestamp.toDate && typeof timestamp.toDate === 'function') {
+      return timestamp.toDate();
+    }
+    return new Date(timestamp);
+  };
+
   // Safety check for ride data
   if (!ride || !Array.isArray(ride.children)) {
     return (
@@ -39,6 +49,8 @@ const ActiveRideTracker: React.FC<ActiveRideTrackerProps> = ({ ride, onRideUpdat
     switch (status) {
       case 'picked_up':
         return 'bg-green-100 text-green-800 border-green-200';
+      case 'dropped_off':
+        return 'bg-blue-100 text-blue-800 border-blue-200';
       case 'absent':
         return 'bg-red-100 text-red-800 border-red-200';
       case 'pending':
@@ -52,6 +64,8 @@ const ActiveRideTracker: React.FC<ActiveRideTrackerProps> = ({ ride, onRideUpdat
     switch (status) {
       case 'picked_up':
         return <CheckCircle className="h-4 w-4 text-green-600" />;
+      case 'dropped_off':
+        return <CheckCircle className="h-4 w-4 text-blue-600" />;
       case 'absent':
         return <XCircle className="h-4 w-4 text-red-600" />;
       case 'pending':
@@ -61,7 +75,7 @@ const ActiveRideTracker: React.FC<ActiveRideTrackerProps> = ({ ride, onRideUpdat
     }
   };
 
-  const handleStatusUpdate = async (childId: string, status: 'picked_up' | 'absent') => {
+  const handleStatusUpdate = async (childId: string, status: 'picked_up' | 'absent' | 'dropped_off') => {
     setUpdatingChild(childId);
     
     try {
@@ -73,7 +87,8 @@ const ActiveRideTracker: React.FC<ActiveRideTrackerProps> = ({ ride, onRideUpdat
           return {
             ...child,
             status,
-            pickedUpAt: status === 'picked_up' ? new Date() : child.pickedUpAt
+            pickedUpAt: status === 'picked_up' ? new Date() : child.pickedUpAt,
+            droppedOffAt: status === 'dropped_off' ? new Date() : child.droppedOffAt
           };
         }
         return child;
@@ -81,8 +96,9 @@ const ActiveRideTracker: React.FC<ActiveRideTrackerProps> = ({ ride, onRideUpdat
 
       const pickedUpCount = updatedChildren.filter(child => child.status === 'picked_up').length;
       const absentCount = updatedChildren.filter(child => child.status === 'absent').length;
+      const droppedOffCount = updatedChildren.filter(child => child.status === 'dropped_off').length;
       const allProcessed = updatedChildren.every(child => 
-        child.status === 'picked_up' || child.status === 'absent'
+        child.status === 'dropped_off' || child.status === 'absent'
       );
 
       const updatedRide: ActiveRide = {
@@ -90,6 +106,7 @@ const ActiveRideTracker: React.FC<ActiveRideTrackerProps> = ({ ride, onRideUpdat
         children: updatedChildren,
         pickedUpCount,
         absentCount,
+        droppedOffCount,
         status: allProcessed ? 'completed' : ride.status,
         completedAt: allProcessed ? new Date() : ride.completedAt,
         updatedAt: new Date()
@@ -97,9 +114,12 @@ const ActiveRideTracker: React.FC<ActiveRideTrackerProps> = ({ ride, onRideUpdat
 
       onRideUpdate(updatedRide);
 
+      const statusText = status === 'picked_up' ? 'picked up' : 
+                       status === 'dropped_off' ? 'dropped off' : 'absent';
+      
       toast({
         title: "Status Updated",
-        description: `Child marked as ${status === 'picked_up' ? 'picked up' : 'absent'}`,
+        description: `Child marked as ${statusText}`,
       });
 
       if (allProcessed) {
@@ -175,7 +195,7 @@ const ActiveRideTracker: React.FC<ActiveRideTrackerProps> = ({ ride, onRideUpdat
           </div>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-3 gap-4 text-center">
+          <div className="grid grid-cols-4 gap-3 text-center">
             <div>
               <div className="text-2xl font-bold text-orange-900">{ride.totalChildren}</div>
               <div className="text-sm text-orange-700">Total</div>
@@ -183,6 +203,10 @@ const ActiveRideTracker: React.FC<ActiveRideTrackerProps> = ({ ride, onRideUpdat
             <div>
               <div className="text-2xl font-bold text-green-600">{ride.pickedUpCount}</div>
               <div className="text-sm text-green-700">Picked Up</div>
+            </div>
+            <div>
+              <div className="text-2xl font-bold text-blue-600">{ride.droppedOffCount || 0}</div>
+              <div className="text-sm text-blue-700">Dropped Off</div>
             </div>
             <div>
               <div className="text-2xl font-bold text-red-600">{ride.absentCount}</div>
@@ -233,13 +257,28 @@ const ActiveRideTracker: React.FC<ActiveRideTrackerProps> = ({ ride, onRideUpdat
                 <div className="flex items-center gap-2">
                   <MapPin className="h-4 w-4 text-orange-600" />
                   <span className="text-sm text-orange-800 flex-1">
-                    {child.pickupLocation.address}
+                    Pickup: {child.pickupLocation.address}
                   </span>
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => openNavigation(child.pickupLocation.address)}
                     className="h-7 px-2 border-orange-300"
+                  >
+                    <Navigation className="h-3 w-3" />
+                  </Button>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4 text-blue-600" />
+                  <span className="text-sm text-blue-800 flex-1">
+                    Drop-off: {child.dropoffLocation.address}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => openNavigation(child.dropoffLocation.address)}
+                    className="h-7 px-2 border-blue-300"
                   >
                     <Navigation className="h-3 w-3" />
                   </Button>
@@ -256,7 +295,19 @@ const ActiveRideTracker: React.FC<ActiveRideTrackerProps> = ({ ride, onRideUpdat
                   <div className="flex items-center gap-2">
                     <CheckCircle className="h-4 w-4 text-green-600" />
                     <span className="text-sm text-green-700">
-                      Picked up: {child.pickedUpAt.toLocaleTimeString('en-US', {
+                      Picked up: {toDate(child.pickedUpAt).toLocaleTimeString('en-US', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </span>
+                  </div>
+                )}
+
+                {child.droppedOffAt && (
+                  <div className="flex items-center gap-2">
+                    <CheckCircle className="h-4 w-4 text-blue-600" />
+                    <span className="text-sm text-blue-700">
+                      Dropped off: {toDate(child.droppedOffAt).toLocaleTimeString('en-US', {
                         hour: '2-digit',
                         minute: '2-digit'
                       })}
@@ -293,6 +344,26 @@ const ActiveRideTracker: React.FC<ActiveRideTrackerProps> = ({ ride, onRideUpdat
                   >
                     <XCircle className="h-4 w-4 mr-1" />
                     Mark Absent
+                  </Button>
+                </div>
+              )}
+
+              {child.status === 'picked_up' && ride.status !== 'completed' && (
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => handleStatusUpdate(child.childId, 'dropped_off')}
+                    disabled={updatingChild === child.childId}
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 h-9"
+                    size="sm"
+                  >
+                    {updatingChild === child.childId ? (
+                      "Updating..."
+                    ) : (
+                      <>
+                        <CheckCircle className="h-4 w-4 mr-1" />
+                        Mark Dropped Off
+                      </>
+                    )}
                   </Button>
                 </div>
               )}
