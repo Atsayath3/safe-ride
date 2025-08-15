@@ -361,4 +361,86 @@ export class RideService {
       throw error;
     }
   }
+
+  /**
+   * Get active rides for a parent based on their children
+   */
+  static async getActiveRidesForParent(parentId: string): Promise<ActiveRide[]> {
+    try {
+      console.log('Getting active rides for parent:', parentId);
+      
+      // First, get all children for this parent
+      const childrenQuery = query(
+        collection(db, 'children'),
+        where('parentId', '==', parentId)
+      );
+      const childrenSnapshot = await getDocs(childrenQuery);
+      
+      if (childrenSnapshot.empty) {
+        console.log('No children found for parent');
+        return [];
+      }
+      
+      const childIds = childrenSnapshot.docs.map(doc => doc.id);
+      console.log('Found children:', childIds);
+      
+      // Get all active rides
+      const ridesQuery = query(
+        collection(db, 'activeRides'),
+        where('status', '==', 'in_progress')
+      );
+      const ridesSnapshot = await getDocs(ridesQuery);
+      
+      if (ridesSnapshot.empty) {
+        console.log('No active rides found');
+        return [];
+      }
+      
+      // Filter rides that contain this parent's children
+      const activeRides: ActiveRide[] = [];
+      
+      for (const rideDoc of ridesSnapshot.docs) {
+        const rideData = rideDoc.data();
+        const ride: ActiveRide = {
+          id: rideDoc.id,
+          driverId: rideData.driverId,
+          date: rideData.date?.toDate ? rideData.date.toDate() : rideData.date,
+          status: rideData.status,
+          startedAt: rideData.startedAt?.toDate ? rideData.startedAt.toDate() : rideData.startedAt,
+          children: rideData.children || [],
+          createdAt: rideData.createdAt?.toDate ? rideData.createdAt.toDate() : rideData.createdAt,
+          updatedAt: rideData.updatedAt?.toDate ? rideData.updatedAt.toDate() : rideData.updatedAt,
+          totalChildren: rideData.totalChildren,
+          pickedUpCount: rideData.pickedUpCount,
+          absentCount: rideData.absentCount,
+          droppedOffCount: rideData.droppedOffCount
+        };
+        
+        // Check if any of the ride's children belong to this parent
+        const hasParentChildren = ride.children.some((rideChild: RideChild) => 
+          childIds.includes(rideChild.childId)
+        );
+        
+        if (hasParentChildren) {
+          // Filter children to only include this parent's children
+          const parentChildren = ride.children.filter((rideChild: RideChild) => 
+            childIds.includes(rideChild.childId)
+          );
+          
+          activeRides.push({
+            ...ride,
+            children: parentChildren,
+            totalChildren: parentChildren.length
+          });
+        }
+      }
+      
+      console.log('Found active rides for parent:', activeRides.length);
+      return activeRides;
+      
+    } catch (error) {
+      console.error('Error getting active rides for parent:', error);
+      throw error;
+    }
+  }
 }

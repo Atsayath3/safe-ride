@@ -12,6 +12,7 @@ import { db } from '@/lib/firebase';
 import { toast } from '@/hooks/use-toast';
 import { RideService } from '@/services/rideService';
 import { ActiveRide } from '@/interfaces/ride';
+import { locationTrackingService } from '@/services/locationTrackingService';
 
 const DriverDashboard = () => {
   const navigate = useNavigate();
@@ -159,10 +160,40 @@ const DriverDashboard = () => {
       const ride = await RideService.startRide(userProfile.uid);
       setActiveRide(ride);
       
-      toast({
-        title: "Ride Started!",
-        description: `Found ${ride.totalChildren} children for today's rides`,
-      });
+      // Automatically start location tracking when ride starts
+      try {
+        const parentIds = await locationTrackingService.getParentIdsForRide(ride.id);
+        if (parentIds.length > 0) {
+          const trackingStarted = await locationTrackingService.startTracking(
+            ride.id, 
+            userProfile.uid, 
+            parentIds
+          );
+          
+          if (trackingStarted) {
+            toast({
+              title: "Ride Started!",
+              description: `Found ${ride.totalChildren} children. Location sharing started automatically.`,
+            });
+          } else {
+            toast({
+              title: "Ride Started!",
+              description: `Found ${ride.totalChildren} children. Location sharing failed - check permissions.`,
+            });
+          }
+        } else {
+          toast({
+            title: "Ride Started!",
+            description: `Found ${ride.totalChildren} children. No parents to notify for location tracking.`,
+          });
+        }
+      } catch (locationError) {
+        console.error('Error starting location tracking:', locationError);
+        toast({
+          title: "Ride Started!",
+          description: `Found ${ride.totalChildren} children. Location sharing will need to be started manually.`,
+        });
+      }
     } catch (error: any) {
       console.error('Error starting ride:', error);
       toast({
