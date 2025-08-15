@@ -20,8 +20,7 @@ const DriverProfile = () => {
   return (
     <MobileLayout 
       title="Profile" 
-      showBack={true} 
-      onBack={() => navigate('/driver/dashboard')}
+      showBack={true}
       theme="driver"
     >
       <div className="p-4 space-y-6">

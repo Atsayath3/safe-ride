@@ -65,8 +65,7 @@ const DriverRequests = () => {
   return (
     <MobileLayout 
       title="Ride Requests" 
-      showBack={true} 
-      onBack={() => navigate('/driver/dashboard')}
+      showBack={true}
     >
       <div className="p-4 space-y-4">
         {requests.length === 0 ? (

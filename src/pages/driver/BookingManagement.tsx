@@ -25,17 +25,35 @@ const BookingManagement = () => {
   }, [userProfile]);
 
   const loadBookings = async () => {
-    if (!userProfile?.uid) return;
+    if (!userProfile?.uid) {
+      console.log('❌ No user profile UID available for loading bookings');
+      return;
+    }
     
+    console.log('📋 Loading bookings for driver:', userProfile.uid);
     setLoading(true);
     try {
       const driverBookings = await BookingService.getDriverBookings(userProfile.uid);
+      console.log('✅ Successfully loaded bookings:', driverBookings.length);
       setBookings(driverBookings);
-    } catch (error) {
-      console.error('Error loading bookings:', error);
+    } catch (error: any) {
+      console.error('❌ Error loading bookings:', error);
+      
+      // More specific error messages
+      let errorMessage = "Failed to load bookings. Please try again.";
+      if (error?.code === 'failed-precondition') {
+        errorMessage = "Database index required. Please contact support.";
+      } else if (error?.code === 'permission-denied') {
+        errorMessage = "Access denied. Please check your permissions.";
+      } else if (error?.code === 'unavailable') {
+        errorMessage = "Service temporarily unavailable. Please try again later.";
+      } else if (error?.message?.includes('index')) {
+        errorMessage = "Database configuration issue. Please contact support.";
+      }
+      
       toast({
-        title: "Error",
-        description: "Failed to load bookings. Please try again.",
+        title: "Error Loading Bookings",
+        description: errorMessage,
         variant: "destructive"
       });
     } finally {
@@ -44,13 +62,19 @@ const BookingManagement = () => {
   };
 
   const loadAvailability = async () => {
-    if (!userProfile?.uid) return;
+    if (!userProfile?.uid) {
+      console.log('❌ No user profile UID available for loading availability');
+      return;
+    }
     
+    console.log('🪑 Loading availability for driver:', userProfile.uid);
     try {
       const driverAvailability = await BookingService.getDriverAvailability(userProfile.uid);
+      console.log('✅ Successfully loaded availability:', driverAvailability);
       setAvailability(driverAvailability);
     } catch (error) {
-      console.error('Error loading availability:', error);
+      console.error('❌ Error loading availability:', error);
+      // Don't show toast for availability errors as it's not critical
     }
   };
 
@@ -178,12 +202,14 @@ const BookingManagement = () => {
           <TabsContent value="pending" className="space-y-4">
             {loading ? (
               <div className="text-center py-8 text-orange-600">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600 mx-auto mb-2"></div>
                 Loading bookings...
               </div>
             ) : pendingBookings.length === 0 ? (
               <div className="text-center py-8">
                 <Clock className="w-12 h-12 text-orange-400 mx-auto mb-4" />
-                <p className="text-orange-600">No pending booking requests</p>
+                <p className="text-orange-600 font-medium">No pending booking requests</p>
+                <p className="text-orange-500 text-sm mt-1">New requests from parents will appear here</p>
               </div>
             ) : (
               pendingBookings.map((booking) => (

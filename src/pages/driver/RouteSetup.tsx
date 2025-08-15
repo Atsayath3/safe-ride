@@ -83,8 +83,7 @@ const RouteSetup = () => {
   return (
     <MobileLayout 
       title="Set Your Route" 
-      showBack={true} 
-      onBack={() => navigate('/driver/dashboard')}
+      showBack={true}
       theme="driver"
     >
       <div className="p-4 space-y-6 min-h-screen">

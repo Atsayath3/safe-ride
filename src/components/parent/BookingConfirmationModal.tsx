@@ -28,13 +28,14 @@ const BookingConfirmationModal: React.FC<BookingConfirmationModalProps> = ({
   onBookingComplete
 }) => {
   const { userProfile } = useAuth();
-  const [rideDate, setRideDate] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [rideTime, setRideTime] = useState('');
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
 
   const handleConfirmBooking = async () => {
-    if (!driver || !userProfile || !rideDate || !rideTime) {
+    if (!driver || !userProfile || !startDate || !endDate || !rideTime) {
       toast({
         title: "Missing Information",
         description: "Please fill in all required fields",
@@ -43,25 +44,50 @@ const BookingConfirmationModal: React.FC<BookingConfirmationModalProps> = ({
       return;
     }
 
+    // Validate that end date is not before start date
+    if (new Date(endDate) < new Date(startDate)) {
+      toast({
+        title: "Invalid Date Range",
+        description: "End date cannot be before start date",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setLoading(true);
     try {
-      const rideDatetime = new Date(`${rideDate}T${rideTime}`);
+      // Calculate the number of school days
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      let schoolDays = 0;
       
+      for (let currentDate = new Date(start); currentDate <= end; currentDate.setDate(currentDate.getDate() + 1)) {
+        // Count only weekdays (Monday to Friday)
+        if (currentDate.getDay() !== 0 && currentDate.getDay() !== 6) {
+          schoolDays++;
+        }
+      }
+      
+      // Create a single period booking request
       const bookingRequest = {
         parentId: userProfile.uid,
         driverId: driver.uid,
         childId: child.id,
         pickupLocation: child.tripStartLocation,
         dropoffLocation: child.schoolLocation,
-        rideDate: rideDatetime,
+        rideDate: start, // Start date of the period
+        endDate: end,    // End date of the period
+        isRecurring: true,
+        recurringDays: schoolDays,
+        dailyTime: rideTime,
         notes: notes.trim() || undefined
       };
 
       await BookingService.createBooking(bookingRequest);
       
       toast({
-        title: "Booking Confirmed!",
-        description: "Your ride has been booked. The driver will contact you soon.",
+        title: "Period Booking Confirmed!",
+        description: `${schoolDays} school day${schoolDays > 1 ? 's' : ''} booked successfully. The driver will review your request.`,
       });
       
       onBookingComplete();
@@ -150,31 +176,71 @@ const BookingConfirmationModal: React.FC<BookingConfirmationModalProps> = ({
           {/* Booking Details */}
           <Card className="border border-border">
             <CardContent className="p-4 space-y-4">
-              <h4 className="font-medium text-foreground">Booking Details</h4>
+              <h4 className="font-medium text-foreground">Booking Period</h4>
               
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="rideDate">Date</Label>
+                  <Label htmlFor="startDate">Start Date</Label>
                   <Input
-                    id="rideDate"
+                    id="startDate"
                     type="date"
-                    value={rideDate}
-                    onChange={(e) => setRideDate(e.target.value)}
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
                     min={new Date().toISOString().split('T')[0]}
                     required
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="rideTime">Time</Label>
+                  <Label htmlFor="endDate">End Date</Label>
                   <Input
-                    id="rideTime"
-                    type="time"
-                    value={rideTime}
-                    onChange={(e) => setRideTime(e.target.value)}
+                    id="endDate"
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    min={startDate || new Date().toISOString().split('T')[0]}
                     required
                   />
                 </div>
               </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="rideTime">Daily Pickup Time</Label>
+                <Input
+                  id="rideTime"
+                  type="time"
+                  value={rideTime}
+                  onChange={(e) => setRideTime(e.target.value)}
+                  required
+                />
+                <p className="text-xs text-muted-foreground">
+                  This will be the pickup time for all school days in the selected period
+                </p>
+              </div>
+
+              {startDate && endDate && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-blue-600" />
+                    <p className="text-sm font-medium text-blue-900">Booking Summary</p>
+                  </div>
+                  <p className="text-xs text-blue-700 mt-1">
+                    {(() => {
+                      const start = new Date(startDate);
+                      const end = new Date(endDate);
+                      let schoolDays = 0;
+                      
+                      for (let currentDate = new Date(start); currentDate <= end; currentDate.setDate(currentDate.getDate() + 1)) {
+                        // Count only weekdays (Monday to Friday)
+                        if (currentDate.getDay() !== 0 && currentDate.getDay() !== 6) {
+                          schoolDays++;
+                        }
+                      }
+                      
+                      return `${schoolDays} school day${schoolDays !== 1 ? 's' : ''} will be booked (weekends excluded)`;
+                    })()}
+                  </p>
+                </div>
+              )}
 
               <div className="space-y-2">
                 <Label htmlFor="notes">Special Instructions (Optional)</Label>
@@ -192,9 +258,9 @@ const BookingConfirmationModal: React.FC<BookingConfirmationModalProps> = ({
           {/* Action Buttons */}
           <div className="flex gap-3 pt-4">
             <Button 
-              variant="outline" 
+              variant="destructive" 
               onClick={onClose}
-              className="flex-1"
+              className="flex-1 bg-red-600 hover:bg-red-700 text-white"
               disabled={loading}
             >
               Cancel
@@ -202,9 +268,9 @@ const BookingConfirmationModal: React.FC<BookingConfirmationModalProps> = ({
             <Button 
               onClick={handleConfirmBooking}
               className="flex-1"
-              disabled={loading || !rideDate || !rideTime}
+              disabled={loading || !startDate || !endDate || !rideTime}
             >
-              {loading ? 'Booking...' : 'Confirm Booking'}
+              {loading ? 'Booking...' : 'Confirm Period Booking'}
             </Button>
           </div>
         </div>

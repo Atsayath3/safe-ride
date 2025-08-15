@@ -15,7 +15,11 @@ export interface Booking {
     address: string;
   };
   bookingDate: Date;
-  rideDate: Date;
+  rideDate: Date; // For single rides, this is the ride date. For period bookings, this is the start date
+  endDate?: Date; // For period bookings, this is the end date
+  isRecurring?: boolean; // True if this is a period booking
+  recurringDays?: number; // Number of school days in the period
+  dailyTime?: string; // Time for daily pickup (HH:MM format)
   createdAt: Date;
   updatedAt: Date;
   notes?: string;
@@ -44,5 +48,9 @@ export interface BookingRequest {
     address: string;
   };
   rideDate: Date;
+  endDate?: Date; // For period bookings
+  isRecurring?: boolean;
+  recurringDays?: number;
+  dailyTime?: string;
   notes?: string;
 }

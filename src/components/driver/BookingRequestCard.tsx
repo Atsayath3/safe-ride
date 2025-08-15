@@ -3,9 +3,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { MapPin, Calendar, Clock, User, Phone } from 'lucide-react';
+import { MapPin, Calendar, Clock, User, Phone, CalendarDays } from 'lucide-react';
 import { Booking } from '@/interfaces/booking';
-import { format } from 'date-fns';
+import { format, differenceInDays } from 'date-fns';
 
 interface BookingRequestCardProps {
   booking: Booking;
@@ -42,7 +42,14 @@ const BookingRequestCard: React.FC<BookingRequestCardProps> = ({
               {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
             </Badge>
             <div className="text-sm text-orange-600">
-              {format(booking.rideDate, 'MMM dd, yyyy')}
+              {booking.isRecurring && booking.endDate ? (
+                <div className="text-center">
+                  <div>{format(booking.rideDate, 'MMM dd')} - {format(booking.endDate, 'MMM dd, yyyy')}</div>
+                  <div className="text-xs text-orange-500">{booking.recurringDays} school days</div>
+                </div>
+              ) : (
+                format(booking.rideDate, 'MMM dd, yyyy')
+              )}
             </div>
           </div>
 
@@ -53,19 +60,49 @@ const BookingRequestCard: React.FC<BookingRequestCardProps> = ({
               <span className="font-medium text-orange-900">Booking #{booking.id.slice(-6)}</span>
             </div>
 
-            <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-orange-600" />
-              <span className="text-sm text-orange-800">
-                {format(booking.rideDate, 'EEEE, MMMM dd, yyyy')}
-              </span>
-            </div>
+            {booking.isRecurring && booking.endDate ? (
+              <>
+                <div className="flex items-center gap-2">
+                  <CalendarDays className="w-4 h-4 text-orange-600" />
+                  <span className="text-sm text-orange-800">
+                    Period Booking: {format(booking.rideDate, 'EEEE, MMMM dd, yyyy')} - {format(booking.endDate, 'EEEE, MMMM dd, yyyy')}
+                  </span>
+                </div>
 
-            <div className="flex items-center gap-2">
-              <Clock className="w-4 h-4 text-orange-600" />
-              <span className="text-sm text-orange-800">
-                {format(booking.rideDate, 'hh:mm a')}
-              </span>
-            </div>
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-orange-600" />
+                  <span className="text-sm text-orange-800">
+                    Daily pickup at {booking.dailyTime || format(booking.rideDate, 'hh:mm a')}
+                  </span>
+                </div>
+
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <div className="text-sm font-medium text-blue-900 mb-1">Period Summary</div>
+                  <div className="text-sm text-blue-700">
+                    {booking.recurringDays} school day{booking.recurringDays !== 1 ? 's' : ''} 
+                    {booking.recurringDays && (
+                      <span className="ml-1">(weekends excluded)</span>
+                    )}
+                  </div>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="flex items-center gap-2">
+                  <Calendar className="w-4 h-4 text-orange-600" />
+                  <span className="text-sm text-orange-800">
+                    {format(booking.rideDate, 'EEEE, MMMM dd, yyyy')}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-orange-600" />
+                  <span className="text-sm text-orange-800">
+                    {format(booking.rideDate, 'hh:mm a')}
+                  </span>
+                </div>
+              </>
+            )}
 
             <div className="space-y-2">
               <div className="flex items-start gap-2">

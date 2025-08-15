@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Menu } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
 interface MobileLayoutProps {
   children: React.ReactNode;
@@ -11,6 +12,7 @@ interface MobileLayoutProps {
   onMenu?: () => void;
   className?: string;
   theme?: 'parent' | 'driver' | 'admin' | 'default';
+  rightContent?: React.ReactNode;
 }
 
 const MobileLayout: React.FC<MobileLayoutProps> = ({
@@ -21,8 +23,32 @@ const MobileLayout: React.FC<MobileLayoutProps> = ({
   showMenu = false,
   onMenu,
   className = "",
-  theme = 'default'
+  theme = 'default',
+  rightContent
 }) => {
+  const navigate = useNavigate();
+
+  const handleBack = () => {
+    if (onBack) {
+      onBack();
+    } else {
+      // Default behavior: go back in browser history
+      window.history.length > 1 ? navigate(-1) : navigate('/');
+    }
+  };
+
+  // Add keyboard support for back navigation
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape' && showBack) {
+        event.preventDefault();
+        handleBack();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [showBack, onBack]);
   const getThemeClasses = () => {
     switch (theme) {
       case 'parent':
@@ -71,8 +97,10 @@ const MobileLayout: React.FC<MobileLayoutProps> = ({
               <Button
                 variant="ghost"
                 size="sm"
-                onClick={onBack}
-                className={`p-2 h-10 w-10 ${themeClasses.headerButton}`}
+                onClick={handleBack}
+                className={`p-2 h-10 w-10 ${themeClasses.headerButton} transition-transform hover:scale-110 active:scale-95`}
+                aria-label="Go back"
+                title="Go back (ESC)"
               >
                 <ArrowLeft className="h-5 w-5" />
               </Button>
@@ -84,16 +112,19 @@ const MobileLayout: React.FC<MobileLayoutProps> = ({
             )}
           </div>
           
-          {showMenu && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onMenu}
-              className={`p-2 h-10 w-10 ${themeClasses.headerButton}`}
-            >
-              <Menu className="h-5 w-5" />
-            </Button>
-          )}
+          <div className="flex items-center gap-2">
+            {rightContent}
+            {showMenu && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onMenu}
+                className={`p-2 h-10 w-10 ${themeClasses.headerButton}`}
+              >
+                <Menu className="h-5 w-5" />
+              </Button>
+            )}
+          </div>
         </header>
 
         {/* Content */}

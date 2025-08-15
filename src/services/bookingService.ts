@@ -23,9 +23,7 @@ export class BookingService {
       const q = query(
         driversRef, 
         where('role', '==', 'driver'),
-        where('status', '==', 'approved'),
-        where('profileComplete', '==', true),
-        where('bookingOpen', '==', true)
+        where('status', '==', 'approved')
       );
       
       const snapshot = await getDocs(q);
@@ -37,28 +35,32 @@ export class BookingService {
 
       console.log(`📊 Found ${drivers.length} potential drivers from query`);
 
-      // Filter drivers with availability, routes, and booking open
+      // Filter drivers with availability and basic requirements
       const availableDrivers = [];
       for (const driver of drivers) {
         console.log(`🚗 Checking driver: ${driver.firstName} ${driver.lastName} (${driver.uid})`);
         
-        // Check if driver has routes set
-        if (!driver.routes?.startPoint || !driver.routes?.endPoint) {
-          console.log(`❌ Driver ${driver.firstName} has no routes set`);
+        // Check if booking is open (skip if not set - default to available)
+        if (driver.bookingOpen === false) {
+          console.log(`❌ Driver ${driver.firstName} has booking closed`);
           continue;
         }
-        console.log(`✅ Driver ${driver.firstName} has routes:`, driver.routes);
+        console.log(`✅ Driver ${driver.firstName} booking status: ${driver.bookingOpen ? 'open' : 'closed or not set'}`);
 
-        // Check availability
-        const availability = await this.getDriverAvailability(driver.uid);
-        console.log(`🪑 Driver ${driver.firstName} availability:`, availability);
-        if (availability.availableSeats <= 0) {
-          console.log(`❌ Driver ${driver.firstName} has no available seats`);
-          continue;
+        // Check availability (skip if no vehicle capacity set)
+        if (driver.vehicle?.capacity) {
+          const availability = await this.getDriverAvailability(driver.uid);
+          console.log(`🪑 Driver ${driver.firstName} availability:`, availability);
+          if (availability.availableSeats <= 0) {
+            console.log(`❌ Driver ${driver.firstName} has no available seats`);
+            continue;
+          }
+        } else {
+          console.log(`⚠️ Driver ${driver.firstName} has no vehicle capacity set - assuming available`);
         }
 
-        // If child location provided, check route compatibility
-        if (childLocation) {
+        // If child location provided and driver has routes, check route compatibility
+        if (childLocation && driver.routes?.startPoint && driver.routes?.endPoint) {
           const routeCompatible = this.isRouteCompatible(
             childLocation,
             { startPoint: driver.routes.startPoint, endPoint: driver.routes.endPoint }
@@ -68,6 +70,10 @@ export class BookingService {
             console.log(`❌ Driver ${driver.firstName} route not compatible`);
             continue;
           }
+        } else if (driver.routes?.startPoint && driver.routes?.endPoint) {
+          console.log(`✅ Driver ${driver.firstName} has routes set`);
+        } else {
+          console.log(`⚠️ Driver ${driver.firstName} has no routes set - still including as available`);
         }
 
         console.log(`✅ Driver ${driver.firstName} is available!`);
@@ -75,6 +81,13 @@ export class BookingService {
       }
 
       console.log(`🎯 Final available drivers: ${availableDrivers.length}`);
+      
+      // If no drivers found with route matching, try without location filtering
+      if (availableDrivers.length === 0 && childLocation) {
+        console.log('🔄 No route-compatible drivers found, searching without location filtering...');
+        return await this.getAvailableDrivers(); // Call without childLocation
+      }
+      
       return availableDrivers;
     } catch (error) {
       console.error('❌ Error fetching available drivers:', error);
@@ -93,11 +106,11 @@ export class BookingService {
     const schoolDistance = this.calculateDistance(childLocation.school, driverRoute.endPoint);
     
     console.log(`📏 Distance calculations:`);
-    console.log(`  Pickup distance: ${pickupDistance.toFixed(2)}km (limit: 10km)`);
-    console.log(`  School distance: ${schoolDistance.toFixed(2)}km (limit: 10km)`);
+    console.log(`  Pickup distance: ${pickupDistance.toFixed(2)}km (limit: 20km)`);
+    console.log(`  School distance: ${schoolDistance.toFixed(2)}km (limit: 20km)`);
     
-    // Consider compatible if both distances are within 10km
-    const compatible = pickupDistance <= 10 && schoolDistance <= 10;
+    // Consider compatible if both distances are within 20km (increased from 10km)
+    const compatible = pickupDistance <= 20 && schoolDistance <= 20;
     console.log(`  Compatible: ${compatible}`);
     
     return compatible;
@@ -162,13 +175,21 @@ export class BookingService {
         updatedAt: new Date(),
       };
 
-      const docRef = await addDoc(collection(db, 'bookings'), {
+      // Prepare data for Firestore with proper Timestamp conversion
+      const firestoreData: any = {
         ...bookingData,
         bookingDate: Timestamp.fromDate(bookingData.bookingDate),
         rideDate: Timestamp.fromDate(bookingData.rideDate),
         createdAt: Timestamp.fromDate(bookingData.createdAt),
         updatedAt: Timestamp.fromDate(bookingData.updatedAt),
-      });
+      };
+
+      // Convert endDate if it exists (for period bookings)
+      if (bookingData.endDate) {
+        firestoreData.endDate = Timestamp.fromDate(bookingData.endDate);
+      }
+
+      const docRef = await addDoc(collection(db, 'bookings'), firestoreData);
 
       return docRef.id;
     } catch (error) {
@@ -203,24 +224,72 @@ export class BookingService {
 
   static async getDriverBookings(driverId: string): Promise<Booking[]> {
     try {
+      console.log('📋 Fetching bookings for driver:', driverId);
+      
       const bookingsRef = collection(db, 'bookings');
-      const q = query(
-        bookingsRef,
-        where('driverId', '==', driverId),
-        orderBy('createdAt', 'desc')
-      );
-
-      const snapshot = await getDocs(q);
-      return snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        bookingDate: doc.data().bookingDate?.toDate(),
-        rideDate: doc.data().rideDate?.toDate(),
-        createdAt: doc.data().createdAt?.toDate(),
-        updatedAt: doc.data().updatedAt?.toDate(),
-      })) as Booking[];
+      
+      // First try with orderBy, fallback without it if there's an index error
+      let q;
+      try {
+        q = query(
+          bookingsRef,
+          where('driverId', '==', driverId),
+          orderBy('createdAt', 'desc')
+        );
+        
+        const snapshot = await getDocs(q);
+        console.log(`📋 Found ${snapshot.docs.length} bookings with orderBy`);
+        
+        return snapshot.docs.map(doc => {
+          const data = doc.data() as any;
+          return {
+            id: doc.id,
+            ...data,
+            bookingDate: data.bookingDate?.toDate(),
+            rideDate: data.rideDate?.toDate(),
+            endDate: data.endDate?.toDate(), // Handle period booking end date
+            createdAt: data.createdAt?.toDate(),
+            updatedAt: data.updatedAt?.toDate(),
+          };
+        }) as Booking[];
+      } catch (indexError) {
+        console.warn('📋 OrderBy query failed, trying without orderBy:', indexError);
+        
+        // Fallback query without orderBy
+        q = query(
+          bookingsRef,
+          where('driverId', '==', driverId)
+        );
+        
+        const snapshot = await getDocs(q);
+        console.log(`📋 Found ${snapshot.docs.length} bookings without orderBy`);
+        
+        const bookings = snapshot.docs.map(doc => {
+          const data = doc.data() as any;
+          return {
+            id: doc.id,
+            ...data,
+            bookingDate: data.bookingDate?.toDate(),
+            rideDate: data.rideDate?.toDate(),
+            endDate: data.endDate?.toDate(), // Handle period booking end date
+            createdAt: data.createdAt?.toDate(),
+            updatedAt: data.updatedAt?.toDate(),
+          };
+        }) as Booking[];
+        
+        // Sort manually by createdAt in descending order
+        return bookings.sort((a, b) => {
+          if (!a.createdAt || !b.createdAt) return 0;
+          return b.createdAt.getTime() - a.createdAt.getTime();
+        });
+      }
     } catch (error) {
-      console.error('Error fetching driver bookings:', error);
+      console.error('❌ Error fetching driver bookings:', error);
+      console.error('Error details:', {
+        message: error.message,
+        code: error.code,
+        driverId
+      });
       throw error;
     }
   }

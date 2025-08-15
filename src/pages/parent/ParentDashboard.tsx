@@ -13,6 +13,7 @@ import DriverSelectionModal from '@/components/parent/DriverSelectionModal';
 import BookingConfirmationModal from '@/components/parent/BookingConfirmationModal';
 import { useAuth, UserProfile } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
+import { LogOut, User } from 'lucide-react';
 
 export interface Child {
   id: string;
@@ -28,7 +29,7 @@ export interface Child {
 
 const ParentDashboard = () => {
   const navigate = useNavigate();
-  const { userProfile, currentUser } = useAuth();
+  const { userProfile, currentUser, logout } = useAuth();
   const [children, setChildren] = useState<Child[]>([]);
   useEffect(() => {
     const fetchChildren = async () => {
@@ -154,10 +155,39 @@ const ParentDashboard = () => {
     // Refresh the bookings or navigate to bookings page
   };
 
+  const handleLogout = async () => {
+    try {
+      await logout();
+      toast({
+        title: "Logged Out",
+        description: "You have been successfully logged out.",
+      });
+      navigate('/parent/login');
+    } catch (error) {
+      console.error('Logout error:', error);
+      toast({
+        title: "Error",
+        description: "Failed to logout. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
+
   return (
     <MobileLayout
       title={`Welcome, ${userProfile?.firstName || 'Parent'}!`}
       theme="parent"
+      rightContent={
+        <Button
+          onClick={handleLogout}
+          variant="outline"
+          size="sm"
+          className="rounded-xl font-medium px-3 py-2 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300"
+        >
+          <LogOut className="h-4 w-4 mr-1" />
+          Logout
+        </Button>
+      }
     >
       <div className="p-4 space-y-6 pb-20 min-h-screen">
         {/* Header with Add Child Button - Always visible */}

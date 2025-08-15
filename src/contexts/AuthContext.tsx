@@ -45,6 +45,7 @@ export interface UserProfile {
   rejectionReason?: string;
   rejectedAt?: Date;
   approvedAt?: Date;
+  bookingOpen?: boolean;
 }
 
 interface AuthContextType {

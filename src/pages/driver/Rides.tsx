@@ -33,8 +33,7 @@ const DriverRides = () => {
     return (
       <MobileLayout 
         title="My Rides" 
-        showBack={true} 
-        onBack={() => navigate('/driver/dashboard')}
+        showBack={true}
       >
         <div className="p-4">
           <Card className="border-border">
@@ -54,8 +53,7 @@ const DriverRides = () => {
   return (
     <MobileLayout 
       title="My Rides" 
-      showBack={true} 
-      onBack={() => navigate('/driver/dashboard')}
+      showBack={true}
     >
       <div className="p-4 space-y-4">
         {rides.length === 0 ? (

@@ -150,6 +150,78 @@ const DriverDashboard = () => {
       theme="driver"
     >
       <div className="p-4 space-y-6 min-h-screen">
+        {/* Quick Booking Toggle - Prominent at top */}
+        {userProfile?.status === 'approved' && userProfile?.routes && (
+          <Card className="border-2 border-orange-300 shadow-xl bg-gradient-to-r from-orange-50 to-white">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className={`w-4 h-4 rounded-full ${isBookingOpen ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></div>
+                  <div>
+                    <h3 className="font-bold text-orange-900">
+                      {isBookingOpen ? 'ONLINE - Accepting Bookings' : 'OFFLINE - Not Accepting Bookings'}
+                    </h3>
+                    <p className="text-sm text-orange-600">
+                      {isBookingOpen ? 'Parents can book rides with you' : 'Toggle ON to start receiving bookings'}
+                    </p>
+                    {/* Route and vehicle info */}
+                    <div className="mt-2 text-xs text-gray-600">
+                      <p><strong>Route:</strong> {userProfile.routes.startPoint?.address} → {userProfile.routes.endPoint?.address}</p>
+                      {userProfile.vehicle && (
+                        <p><strong>Vehicle:</strong> {userProfile.vehicle.model} ({userProfile.vehicle.year}) - {userProfile.vehicle.capacity} capacity</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+                <Switch
+                  checked={isBookingOpen}
+                  onCheckedChange={toggleBookingAvailability}
+                  disabled={loading}
+                  className="data-[state=checked]:bg-green-600 data-[state=unchecked]:bg-red-500 scale-150 mr-2"
+                />
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Warning messages for non-approved or no routes */}
+        {userProfile?.status !== 'approved' && (
+          <Card className="border-yellow-300 bg-yellow-50 shadow-lg">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="w-4 h-4 rounded-full bg-yellow-500"></div>
+                <div>
+                  <h3 className="font-bold text-yellow-800">Account Pending Approval</h3>
+                  <p className="text-sm text-yellow-600">You need admin approval before accepting bookings</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {userProfile?.status === 'approved' && !userProfile?.routes && (
+          <Card className="border-blue-300 bg-blue-50 shadow-lg">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-4 h-4 rounded-full bg-blue-500"></div>
+                  <div>
+                    <h3 className="font-bold text-blue-800">Routes Not Set</h3>
+                    <p className="text-sm text-blue-600">Please set your pickup and drop-off routes first</p>
+                  </div>
+                </div>
+                <Button 
+                  size="sm" 
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                  onClick={() => navigate('/driver/routes')}
+                >
+                  Set Routes
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Status Card */}
         <Card className="border-orange-200 shadow-lg bg-white">
           <CardHeader className="bg-gradient-to-r from-orange-50 to-white rounded-t-lg">
@@ -172,42 +244,6 @@ const DriverDashboard = () => {
             </div>
           </CardContent>
         </Card>
-
-        {/* Booking Availability Card - Only show if approved and has routes */}
-        {userProfile?.status === 'approved' && userProfile?.routes && (
-          <Card className="border-orange-200 shadow-lg bg-white">
-            <CardHeader className="bg-gradient-to-r from-orange-50 to-white rounded-t-lg">
-              <CardTitle className="text-lg flex items-center justify-between text-orange-900">
-                <span>Booking Availability</span>
-                <div className="flex items-center gap-2">
-                  <span className={`text-sm font-medium ${isBookingOpen ? 'text-green-600' : 'text-red-600'}`}>
-                    {isBookingOpen ? 'ON' : 'OFF'}
-                  </span>
-                  <Switch
-                    checked={isBookingOpen}
-                    onCheckedChange={toggleBookingAvailability}
-                    disabled={loading}
-                    className="data-[state=checked]:bg-orange-600 data-[state=unchecked]:bg-gray-400 border-2 border-gray-500 shadow-md"
-                  />
-                </div>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                <p className="text-sm text-orange-600">
-                  {isBookingOpen 
-                    ? "🟢 You are accepting new booking requests" 
-                    : "🔴 You are not accepting new bookings"
-                  }
-                </p>
-                <div className="text-xs text-orange-500">
-                  <p><strong>Route:</strong> {userProfile.routes.startPoint?.address} → {userProfile.routes.endPoint?.address}</p>
-                  <p><strong>Vehicle:</strong> {userProfile.vehicle?.model} ({userProfile.vehicle?.year}) - {userProfile.vehicle?.capacity} capacity</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        )}
 
         {/* Quick Actions */}
         <div className="grid grid-cols-2 gap-4">
