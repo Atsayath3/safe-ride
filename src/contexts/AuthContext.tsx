@@ -18,6 +18,7 @@ export interface UserProfile {
   phone?: string;
   firstName?: string;
   lastName?: string;
+  username?: string;
   role: 'parent' | 'driver' | 'admin';
   status?: 'pending' | 'approved' | 'rejected';
   profileComplete: boolean;

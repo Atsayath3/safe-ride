@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
 import MobileLayout from '@/components/mobile/MobileLayout';
 import GoogleMap from '@/components/GoogleMap';
-import GoogleMapsKeyInput from '@/components/GoogleMapsKeyInput';
+import { GOOGLE_MAPS_API_KEY } from '@/config/maps';
 
 interface ChildFormData {
   fullName: string;
@@ -33,7 +33,7 @@ const AddChildLocations = () => {
   const [endPoint, setEndPoint] = useState<MapPoint | null>(null);
   const [currentStep, setCurrentStep] = useState<'pickup' | 'school'>('pickup');
   const [isLoading, setIsLoading] = useState(false);
-  const [apiKey, setApiKey] = useState<string>('');
+  const [apiKey, setApiKey] = useState<string>(GOOGLE_MAPS_API_KEY);
 
   useEffect(() => {
     // Get child data from session storage
@@ -48,12 +48,6 @@ const AddChildLocations = () => {
       setChildData(parsedData);
     } catch (error) {
       navigate('/parent/add-child');
-    }
-
-    // Get API key from localStorage
-    const savedApiKey = localStorage.getItem('googleMapsApiKey');
-    if (savedApiKey) {
-      setApiKey(savedApiKey);
     }
   }, [navigate]);
 
@@ -119,40 +113,6 @@ const AddChildLocations = () => {
 
   if (!childData) {
     return null;
-  }
-
-  if (!apiKey) {
-    return (
-      <MobileLayout
-        title="Setup Google Maps"
-        showBack={true}
-        onBack={handleBack}
-        theme="parent"
-      >
-        <div className="p-6">
-          <Card className="shadow-xl rounded-3xl border-0 bg-white/95 backdrop-blur-sm overflow-hidden">
-            <CardHeader className="pb-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
-              <div className="flex items-center justify-center gap-3">
-                <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v-2H7v-2H4a1 1 0 01-1-1v-4a1 1 0 011-1h3l7.257-4.257A6 6 0 0118 9z" />
-                  </svg>
-                </div>
-                <CardTitle className="font-bold text-xl text-center">
-                  Google Maps Setup
-                </CardTitle>
-              </div>
-              <p className="text-center text-blue-100 text-sm mt-2">
-                Configure your Google Maps API key to continue
-              </p>
-            </CardHeader>
-            <CardContent className="p-6">
-              <GoogleMapsKeyInput onKeySet={setApiKey} />
-            </CardContent>
-          </Card>
-        </div>
-      </MobileLayout>
-    );
   }
 
   return (

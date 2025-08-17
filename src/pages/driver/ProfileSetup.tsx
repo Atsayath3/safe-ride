@@ -15,17 +15,18 @@ const ProfileSetup = () => {
   const [step, setStep] = useState<'name' | 'terms'>('name');
   const [formData, setFormData] = useState({
     firstName: '',
-    lastName: ''
+    lastName: '',
+    username: ''
   });
   const [loading, setLoading] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
 
 
   const handleNameNext = () => {
-    if (!formData.firstName.trim() || !formData.lastName.trim()) {
+    if (!formData.firstName.trim() || !formData.lastName.trim() || !formData.username.trim()) {
       toast({
         title: "Error",
-        description: "Please enter your first and last name",
+        description: "Please enter your first name, last name, and username",
         variant: "destructive"
       });
       return;
@@ -96,6 +97,19 @@ const ProfileSetup = () => {
                   onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
                   className="border-orange-200 focus:border-orange-400"
                 />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="username" className="text-orange-800">Username</Label>
+                <Input
+                  id="username"
+                  type="text"
+                  placeholder="johndoe"
+                  value={formData.username}
+                  onChange={(e) => setFormData(prev => ({ ...prev, username: e.target.value }))}
+                  className="border-orange-200 focus:border-orange-400"
+                />
+                <p className="text-xs text-orange-600">Choose a unique username for your account</p>
               </div>
               
               <Button onClick={handleNameNext} className="w-full bg-orange-600 hover:bg-orange-700 text-white shadow-md">

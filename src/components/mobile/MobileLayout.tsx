@@ -128,7 +128,7 @@ const MobileLayout: React.FC<MobileLayoutProps> = ({
         </header>
 
         {/* Content */}
-        <main className="flex-1 overflow-auto">
+        <main className="flex-1 overflow-auto relative">
           {children}
         </main>
       </div>

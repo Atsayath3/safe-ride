@@ -10,6 +10,15 @@ const DriverProfile = () => {
   const navigate = useNavigate();
   const { userProfile, logout } = useAuth();
 
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate('/driver/login');
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
+
   const documentTypes = [
     { key: 'nic', label: 'National ID', path: 'nic' },
     { key: 'vehicleInsurance', label: 'Vehicle Insurance', path: 'insurance' },
@@ -188,7 +197,7 @@ const DriverProfile = () => {
           </Button>
           
           <Button 
-            onClick={logout}
+            onClick={handleLogout}
             className="w-full bg-red-600 hover:bg-red-700 text-white"
           >
             Logout

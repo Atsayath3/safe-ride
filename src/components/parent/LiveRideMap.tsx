@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { MapPin, Navigation, RefreshCw, Maximize2, Minimize2 } from 'lucide-react';
 import { locationTrackingService, LocationData } from '@/services/locationTrackingService';
+import { GOOGLE_MAPS_API_KEY } from '@/config/maps';
 import { useToast } from '@/hooks/use-toast';
 
 interface LiveRideMapProps {
@@ -46,7 +47,7 @@ const LiveRideMap: React.FC<LiveRideMapProps> = ({
   const { toast } = useToast();
 
   const { isLoaded, loadError } = useLoadScript({
-    googleMapsApiKey: 'AIzaSyCA4f6-PLWdvqPe0neE2f0T-JxTnpGUtsA',
+    googleMapsApiKey: GOOGLE_MAPS_API_KEY,
     libraries
   });
 

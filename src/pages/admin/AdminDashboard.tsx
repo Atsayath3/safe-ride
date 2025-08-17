@@ -271,9 +271,21 @@ const AdminDashboard = () => {
                             </div>
                             <div>
                               <CardTitle className="text-lg font-semibold text-slate-900">
-                                {driver.firstName} {driver.lastName}
+                                {driver.username 
+                                  ? `@${driver.username}` 
+                                  : driver.firstName && driver.lastName 
+                                    ? `${driver.firstName} ${driver.lastName}` 
+                                    : driver.email || 'Unknown Driver'
+                                }
                               </CardTitle>
-                              <p className="text-sm text-slate-500">Application #{index + 1}</p>
+                              <p className="text-sm text-slate-500">
+                                {driver.username && driver.firstName && driver.lastName && (
+                                  <>
+                                    {driver.firstName} {driver.lastName} • 
+                                  </>
+                                )}
+                                Application #{index + 1} • {driver.email || 'No email'}
+                              </p>
                             </div>
                           </div>
                           <Badge 
@@ -293,21 +305,36 @@ const AdminDashboard = () => {
                             <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
                             Contact Information
                           </h4>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium text-slate-700 w-16">Email:</span>
-                              <span className="text-slate-600">{driver.email}</span>
+                          <div className="space-y-3 text-sm">
+                            {driver.username && (
+                              <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                                <span className="font-medium text-slate-700 min-w-[70px]">Username:</span>
+                                <span className="text-slate-600 font-mono">@{driver.username}</span>
+                              </div>
+                            )}
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                              <span className="font-medium text-slate-700 min-w-[70px]">Name:</span>
+                              <span className="text-slate-600">
+                                {driver.firstName && driver.lastName 
+                                  ? `${driver.firstName} ${driver.lastName}` 
+                                  : 'Not provided'
+                                }
+                              </span>
                             </div>
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium text-slate-700 w-16">Phone:</span>
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                              <span className="font-medium text-slate-700 min-w-[70px]">Email:</span>
+                              <span className="text-slate-600 break-all">{driver.email}</span>
+                            </div>
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                              <span className="font-medium text-slate-700 min-w-[70px]">Phone:</span>
                               <span className="text-slate-600">{driver.phone}</span>
                             </div>
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium text-slate-700 w-16">City:</span>
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                              <span className="font-medium text-slate-700 min-w-[70px]">City:</span>
                               <span className="text-slate-600">{driver.city}</span>
                             </div>
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium text-slate-700 w-16">Applied:</span>
+                            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                              <span className="font-medium text-slate-700 min-w-[70px]">Applied:</span>
                               <span className="text-slate-600">{driver.createdAt?.toLocaleDateString()}</span>
                             </div>
                           </div>
@@ -321,30 +348,30 @@ const AdminDashboard = () => {
                               <Car className="h-4 w-4" />
                               Vehicle Details
                             </h4>
-                            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
-                              <div>
-                                <span className="font-medium text-slate-700">Type:</span>
-                                <span className="ml-2 text-slate-600">{driver.vehicle.type}</span>
+                            <div className="space-y-3 text-sm">
+                              <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                                <span className="font-medium text-slate-700 min-w-[60px]">Type:</span>
+                                <span className="text-slate-600">{driver.vehicle.type}</span>
                               </div>
-                              <div>
-                                <span className="font-medium text-slate-700">Capacity:</span>
-                                <span className="ml-2 text-slate-600">{driver.vehicle.capacity}</span>
+                              <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                                <span className="font-medium text-slate-700 min-w-[60px]">Capacity:</span>
+                                <span className="text-slate-600">{driver.vehicle.capacity}</span>
                               </div>
-                              <div>
-                                <span className="font-medium text-slate-700">Model:</span>
-                                <span className="ml-2 text-slate-600">{driver.vehicle.model}</span>
+                              <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                                <span className="font-medium text-slate-700 min-w-[60px]">Model:</span>
+                                <span className="text-slate-600">{driver.vehicle.model}</span>
                               </div>
-                              <div>
-                                <span className="font-medium text-slate-700">Year:</span>
-                                <span className="ml-2 text-slate-600">{driver.vehicle.year}</span>
+                              <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                                <span className="font-medium text-slate-700 min-w-[60px]">Year:</span>
+                                <span className="text-slate-600">{driver.vehicle.year}</span>
                               </div>
-                              <div>
-                                <span className="font-medium text-slate-700">Color:</span>
-                                <span className="ml-2 text-slate-600">{driver.vehicle.color}</span>
+                              <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                                <span className="font-medium text-slate-700 min-w-[60px]">Color:</span>
+                                <span className="text-slate-600">{driver.vehicle.color}</span>
                               </div>
-                              <div>
-                                <span className="font-medium text-slate-700">Plate:</span>
-                                <span className="ml-2 text-slate-600">{driver.vehicle.plateNumber}</span>
+                              <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
+                                <span className="font-medium text-slate-700 min-w-[60px]">Plate:</span>
+                                <span className="text-slate-600">{driver.vehicle.plateNumber}</span>
                               </div>
                             </div>
                           </div>
@@ -391,33 +418,37 @@ const AdminDashboard = () => {
                         </div>
 
                         {/* Action Buttons */}
-                        <div className="flex gap-3 pt-4 border-t border-slate-200">
-                          <Button 
-                            onClick={() => handleViewDocuments(driver)}
-                            variant="outline"
-                            className="flex-1 border-blue-200 text-blue-700 hover:bg-blue-50"
-                          >
-                            <Eye className="h-4 w-4 mr-2" />
-                            Review Documents
-                          </Button>
+                        <div className="pt-4 border-t border-slate-200 space-y-3">
+                          <div className="w-full">
+                            <Button 
+                              onClick={() => handleViewDocuments(driver)}
+                              variant="outline"
+                              className="w-full border-blue-200 text-blue-700 hover:bg-blue-50 h-11"
+                            >
+                              <Eye className="h-4 w-4 mr-2" />
+                              Review Documents
+                            </Button>
+                          </div>
                           
-                          <Button 
-                            onClick={() => handleDriverAction(driver.uid, 'approve')}
-                            className="flex-1 bg-green-600 hover:bg-green-700"
-                            disabled={!hasAllDocuments(driver)}
-                          >
-                            <CheckCircle className="h-4 w-4 mr-2" />
-                            Approve
-                          </Button>
-                          
-                          <Button 
-                            onClick={() => handleRejectClick(driver)}
-                            variant="destructive"
-                            className="flex-1"
-                          >
-                            <XCircle className="h-4 w-4 mr-2" />
-                            Reject
-                          </Button>
+                          <div className="flex flex-col sm:flex-row gap-3">
+                            <Button 
+                              onClick={() => handleDriverAction(driver.uid, 'approve')}
+                              className="w-full sm:flex-1 bg-green-600 hover:bg-green-700 h-11"
+                              disabled={!hasAllDocuments(driver)}
+                            >
+                              <CheckCircle className="h-4 w-4 mr-2" />
+                              Approve
+                            </Button>
+                            
+                            <Button 
+                              onClick={() => handleRejectClick(driver)}
+                              variant="destructive"
+                              className="w-full sm:flex-1 h-11"
+                            >
+                              <XCircle className="h-4 w-4 mr-2" />
+                              Reject
+                            </Button>
+                          </div>
                         </div>
                         
                         {!hasAllDocuments(driver) && (
@@ -460,9 +491,17 @@ const AdminDashboard = () => {
                     </div>
                     <div>
                       <p className="font-semibold text-red-900">
-                        {selectedDriverForRejection.firstName} {selectedDriverForRejection.lastName}
+                        {selectedDriverForRejection.username 
+                          ? `@${selectedDriverForRejection.username}` 
+                          : selectedDriverForRejection.firstName && selectedDriverForRejection.lastName
+                            ? `${selectedDriverForRejection.firstName} ${selectedDriverForRejection.lastName}`
+                            : selectedDriverForRejection.email || 'Unknown Driver'
+                        }
                       </p>
                       <p className="text-sm text-red-700">
+                        {selectedDriverForRejection.username && selectedDriverForRejection.firstName && selectedDriverForRejection.lastName && (
+                          <>{selectedDriverForRejection.firstName} {selectedDriverForRejection.lastName} • </>
+                        )}
                         {selectedDriverForRejection.email}
                       </p>
                     </div>
@@ -527,7 +566,7 @@ const AdminDashboard = () => {
 
       {/* Professional Documents Review Dialog */}
       <Dialog open={documentsDialogOpen} onOpenChange={setDocumentsDialogOpen}>
-        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto bg-white">
+        <DialogContent className="max-w-6xl max-h-[95vh] bg-white overflow-hidden flex flex-col">
           <DialogHeader className="border-b border-slate-200 pb-4">
             <DialogTitle className="text-xl font-semibold text-slate-900 flex items-center gap-3">
               <div className="bg-blue-100 p-2 rounded-lg">
@@ -537,8 +576,9 @@ const AdminDashboard = () => {
             </DialogTitle>
           </DialogHeader>
           
-          {selectedDriverForDocuments && (
-            <div className="space-y-8 py-6">
+          <div className="overflow-y-auto flex-1">
+            {selectedDriverForDocuments && (
+              <div className="space-y-8 py-6">
               {/* Driver Profile Summary */}
               <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
                 <CardContent className="p-6">
@@ -548,13 +588,38 @@ const AdminDashboard = () => {
                     </div>
                     <div>
                       <h3 className="text-lg font-semibold text-blue-900">
-                        {selectedDriverForDocuments.firstName} {selectedDriverForDocuments.lastName}
+                        {selectedDriverForDocuments.username 
+                          ? `@${selectedDriverForDocuments.username}` 
+                          : selectedDriverForDocuments.firstName && selectedDriverForDocuments.lastName
+                            ? `${selectedDriverForDocuments.firstName} ${selectedDriverForDocuments.lastName}`
+                            : selectedDriverForDocuments.email || 'Unknown Driver'
+                        }
                       </h3>
-                      <p className="text-blue-700">Driver Application Review</p>
+                      <p className="text-blue-700">
+                        {selectedDriverForDocuments.username && selectedDriverForDocuments.firstName && selectedDriverForDocuments.lastName
+                          ? `${selectedDriverForDocuments.firstName} ${selectedDriverForDocuments.lastName} • Driver Application Review`
+                          : 'Driver Application Review'
+                        }
+                      </p>
                     </div>
                   </div>
                   
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                    {selectedDriverForDocuments.username && (
+                      <div className="bg-white/50 p-3 rounded-lg">
+                        <p className="font-semibold text-blue-900">Username</p>
+                        <p className="text-blue-700 font-mono">@{selectedDriverForDocuments.username}</p>
+                      </div>
+                    )}
+                    <div className="bg-white/50 p-3 rounded-lg">
+                      <p className="font-semibold text-blue-900">Full Name</p>
+                      <p className="text-blue-700">
+                        {selectedDriverForDocuments.firstName && selectedDriverForDocuments.lastName 
+                          ? `${selectedDriverForDocuments.firstName} ${selectedDriverForDocuments.lastName}` 
+                          : 'Not provided'
+                        }
+                      </p>
+                    </div>
                     <div className="bg-white/50 p-3 rounded-lg">
                       <p className="font-semibold text-blue-900">Email</p>
                       <p className="text-blue-700">{selectedDriverForDocuments.email}</p>
@@ -743,13 +808,13 @@ const AdminDashboard = () => {
                 </CardContent>
               </Card>
             </div>
-          )}
+              )}
+            </div>
           
-          <DialogFooter className="border-t border-slate-200 pt-4">
+          <DialogFooter className="border-t border-slate-200 pt-4 flex-shrink-0">
             <Button 
-              variant="outline" 
+              className="px-8 bg-blue-600 text-white hover:bg-blue-700 focus:ring-2 focus:ring-blue-400"
               onClick={() => setDocumentsDialogOpen(false)}
-              className="px-8"
             >
               Close Review
             </Button>

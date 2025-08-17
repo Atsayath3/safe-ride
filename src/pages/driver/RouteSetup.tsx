@@ -1,14 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-
-
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import MobileLayout from '@/components/mobile/MobileLayout';
 import GoogleMap from '@/components/GoogleMap';
-import GoogleMapsKeyInput from '@/components/GoogleMapsKeyInput';
+import { GOOGLE_MAPS_API_KEY } from '@/config/maps';
 
 
 
@@ -23,14 +21,11 @@ const RouteSetup = () => {
   const { updateUserProfile, userProfile } = useAuth();
   
   const [loading, setLoading] = useState(false);
-  const [apiKey, setApiKey] = useState<string>('');
+  const [apiKey, setApiKey] = useState<string>(GOOGLE_MAPS_API_KEY);
 
   // Check for stored API key on component mount
   useEffect(() => {
-    const savedApiKey = localStorage.getItem('google_maps_api_key');
-    if (savedApiKey) {
-      setApiKey(savedApiKey);
-    }
+    // API key is now hardcoded, no need to check localStorage
   }, []);
   const [startPoint, setStartPoint] = useState<MapPoint | null>(
     userProfile?.routes?.startPoint || null
@@ -92,20 +87,16 @@ const RouteSetup = () => {
           <CardHeader className="bg-gradient-to-r from-orange-50 to-white rounded-t-lg">
             <CardTitle className="text-lg text-orange-900">Google Maps Setup</CardTitle>
             <p className="text-sm text-orange-600">
-              {!apiKey ? 'Enter your Google Maps API key to set your route' : 'Click on the map to set your pickup and drop-off points'}
+              Click on the map to set your pickup and drop-off points
             </p>
           </CardHeader>
           <CardContent>
-            {!apiKey ? (
-              <GoogleMapsKeyInput onKeySet={setApiKey} />
-            ) : (
-              <GoogleMap
-                apiKey={apiKey}
-                onRouteSet={handleRouteSet}
-                initialStart={startPoint}
-                initialEnd={endPoint}
-              />
-            )}
+            <GoogleMap
+              apiKey={apiKey}
+              onRouteSet={handleRouteSet}
+              initialStart={startPoint}
+              initialEnd={endPoint}
+            />
           </CardContent>
         </Card>
 

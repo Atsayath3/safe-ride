@@ -9,10 +9,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from '@/hooks/use-toast';
 import MobileLayout from '@/components/mobile/MobileLayout';
 import { useAuth } from '@/contexts/AuthContext';
+import EnhancedDatePicker from '@/components/ui/enhanced-date-picker';
 
 interface ChildFormData {
   fullName: string;
-  dateOfBirth: string;
+  dateOfBirth: Date | null;
   gender: 'male' | 'female' | 'other';
   schoolName: string;
   studentId: string;
@@ -26,7 +27,7 @@ const EditChild = () => {
   const [initialLoading, setInitialLoading] = useState(true);
   const [formData, setFormData] = useState<ChildFormData>({
     fullName: '',
-    dateOfBirth: '',
+    dateOfBirth: null,
     gender: 'male',
     schoolName: '',
     studentId: '',
@@ -56,8 +57,8 @@ const EditChild = () => {
           setFormData({
             fullName: data.fullName || '',
             dateOfBirth: data.dateOfBirth?.toDate?.() 
-              ? data.dateOfBirth.toDate().toISOString().split('T')[0] 
-              : data.dateOfBirth || '',
+              ? data.dateOfBirth.toDate() 
+              : data.dateOfBirth ? new Date(data.dateOfBirth) : null,
             gender: data.gender || 'male',
             schoolName: data.schoolName || '',
             studentId: data.studentId || '',
@@ -124,7 +125,7 @@ const EditChild = () => {
       const childDocRef = doc(db, 'children', childId);
       await updateDoc(childDocRef, {
         fullName: formData.fullName.trim(),
-        dateOfBirth: new Date(formData.dateOfBirth),
+        dateOfBirth: formData.dateOfBirth,
         gender: formData.gender,
         schoolName: formData.schoolName.trim(),
         studentId: formData.studentId.trim(),
@@ -195,18 +196,22 @@ const EditChild = () => {
                   placeholder="Enter child's full name"
                   value={formData.fullName}
                   onChange={(e) => setFormData(prev => ({ ...prev, fullName: e.target.value }))}
-                  className="h-12 border-blue-200 focus:border-blue-400 rounded-xl"
+                  className="h-12 border-slate-700 focus:border-slate-500 rounded-xl bg-slate-800 text-slate-300 placeholder:text-slate-500"
                 />
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="dateOfBirth" className="text-blue-800 font-medium">Date of Birth *</Label>
-                <Input
-                  id="dateOfBirth"
-                  type="date"
+                <EnhancedDatePicker
                   value={formData.dateOfBirth}
-                  onChange={(e) => setFormData(prev => ({ ...prev, dateOfBirth: e.target.value }))}
+                  onChange={(date) => setFormData(prev => ({ ...prev, dateOfBirth: date || null }))}
+                  placeholder="Select date of birth"
                   className="h-12 border-blue-200 focus:border-blue-400 rounded-xl"
+                  disabled={(date) =>
+                    date > new Date() || date < new Date("1900-01-01")
+                  }
+                  minYear={1900}
+                  maxYear={new Date().getFullYear()}
                 />
               </div>
 
@@ -214,13 +219,13 @@ const EditChild = () => {
                 <Label htmlFor="gender" className="text-blue-800 font-medium">Gender *</Label>
                 <select
                   id="gender"
-                  className="w-full h-12 rounded-xl border border-blue-200 bg-white px-3 text-base focus:outline-none focus:border-blue-400"
+                  className="w-full h-12 rounded-xl border border-slate-700 bg-slate-800 px-3 text-base focus:outline-none focus:border-slate-500 text-slate-300"
                   value={formData.gender}
                   onChange={(e) => setFormData(prev => ({ ...prev, gender: e.target.value as 'male' | 'female' | 'other' }))}
                 >
-                  <option value="male">Male</option>
-                  <option value="female">Female</option>
-                  <option value="other">Other</option>
+                  <option value="male" className="bg-slate-800 text-slate-300">Male</option>
+                  <option value="female" className="bg-slate-800 text-slate-300">Female</option>
+                  <option value="other" className="bg-slate-800 text-slate-300">Other</option>
                 </select>
               </div>
 
@@ -232,7 +237,7 @@ const EditChild = () => {
                   placeholder="Enter school name"
                   value={formData.schoolName}
                   onChange={(e) => setFormData(prev => ({ ...prev, schoolName: e.target.value }))}
-                  className="h-12 border-blue-200 focus:border-blue-400 rounded-xl"
+                  className="h-12 border-slate-700 focus:border-slate-500 rounded-xl bg-slate-800 text-slate-300 placeholder:text-slate-500"
                 />
               </div>
 
@@ -244,7 +249,7 @@ const EditChild = () => {
                   placeholder="Enter student ID (optional)"
                   value={formData.studentId}
                   onChange={(e) => setFormData(prev => ({ ...prev, studentId: e.target.value }))}
-                  className="h-12 border-blue-200 focus:border-blue-400 rounded-xl"
+                  className="h-12 border-slate-700 focus:border-slate-500 rounded-xl bg-slate-800 text-slate-300 placeholder:text-slate-500"
                 />
               </div>
 
