@@ -443,4 +443,64 @@ export class RideService {
       throw error;
     }
   }
+
+  /**
+   * Get completed rides for a driver
+   */
+  static async getDriverRideHistory(driverId: string, limit: number = 50): Promise<ActiveRide[]> {
+    try {
+      console.log('Getting ride history for driver:', driverId);
+      
+      // Query all rides for this driver (simplified to avoid index requirements)
+      const ridesQuery = query(
+        collection(db, 'activeRides'),
+        where('driverId', '==', driverId)
+      );
+      
+      const ridesSnapshot = await getDocs(ridesQuery);
+      console.log('Found', ridesSnapshot.size, 'total rides for driver');
+      
+      const rides: ActiveRide[] = [];
+      
+      ridesSnapshot.docs.forEach(doc => {
+        const data = doc.data();
+        
+        // Convert Firestore timestamps to Date objects
+        const ride: ActiveRide = {
+          id: doc.id,
+          driverId: data.driverId,
+          date: data.date?.toDate ? data.date.toDate() : new Date(data.date),
+          status: data.status,
+          startedAt: data.startedAt?.toDate ? data.startedAt.toDate() : (data.startedAt ? new Date(data.startedAt) : undefined),
+          completedAt: data.completedAt?.toDate ? data.completedAt.toDate() : (data.completedAt ? new Date(data.completedAt) : undefined),
+          children: data.children || [],
+          createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(data.createdAt),
+          updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : new Date(data.updatedAt),
+          totalChildren: data.totalChildren || 0,
+          pickedUpCount: data.pickedUpCount || 0,
+          absentCount: data.absentCount || 0,
+          droppedOffCount: data.droppedOffCount || 0
+        };
+        
+        rides.push(ride);
+      });
+      
+      // Filter completed rides and sort by date (client-side)
+      const completedRides = rides
+        .filter(ride => ride.status === 'completed')
+        .sort((a, b) => {
+          const dateA = a.completedAt || a.updatedAt;
+          const dateB = b.completedAt || b.updatedAt;
+          return dateB.getTime() - dateA.getTime();
+        })
+        .slice(0, limit);
+      
+      console.log('Processed', completedRides.length, 'completed rides out of', rides.length, 'total rides');
+      return completedRides;
+      
+    } catch (error) {
+      console.error('Error getting driver ride history:', error);
+      throw error;
+    }
+  }
 }

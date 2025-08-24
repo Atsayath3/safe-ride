@@ -88,7 +88,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       uid: user.uid,
       email: user.email || undefined,
       role,
-      status: role === 'driver' ? 'pending' : undefined,
+      status: role === 'driver' ? 'pending' : 'approved', // Parents are auto-approved
       profileComplete: false,
       createdAt: new Date()
     };

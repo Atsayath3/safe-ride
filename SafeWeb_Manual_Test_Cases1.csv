@@ -1,0 +1,268 @@
+Test Case ID,Feature/Module,Test Scenario/Functionality,Steps to Execute,Expected Result,Test Data/Setup,Pass/Fail,Comments,Priority,Tester Name,Date Tested
+TC-001,Authentication,User Registration - Parent,"1. Navigate to registration page
+2. Select 'Parent' role
+3. Fill all required fields (email, password, firstName, lastName, phone)
+4. Submit form","User account created successfully with 'pending' status, confirmation message displayed",Valid parent details,PASS,Registration working correctly,High,,
+TC-002,Authentication,User Registration - Driver,"1. Navigate to registration page
+2. Select 'Driver' role
+3. Fill all required fields including vehicle details
+4. Submit form","Driver account created with 'pending' status, redirected to dashboard",Valid driver details,FAIL,Vehicle validation not working properly - accepts invalid license numbers,High,,
+TC-003,Authentication,User Registration - Admin,"1. Navigate to registration page
+2. Select 'Admin' role
+3. Fill all required fields
+4. Submit form","Admin account created, proper role assignment",Valid admin details,PASS,Admin creation working,High,,
+TC-004,Authentication,Login with Valid Credentials,"1. Navigate to login page
+2. Enter valid email and password
+3. Click login button","User logged in successfully, redirected to appropriate dashboard based on role",Existing user credentials,PASS,Login functionality working,Critical,,
+TC-005,Authentication,Login with Invalid Credentials,"1. Navigate to login page
+2. Enter invalid email/password
+3. Click login button","Error message displayed: 'Invalid credentials'",Invalid credentials,PASS,Error handling working,High,,
+TC-006,Authentication,Password Reset,"1. Click 'Forgot Password' link
+2. Enter registered email
+3. Submit form","Password reset email sent, success message displayed",Registered email address,FAIL,Email service integration issue - emails not being sent,Medium,,
+TC-007,Authentication,Email Verification,"1. Register new account
+2. Check email for verification link
+3. Click verification link","Email verified, account status updated",New user account,FAIL,Verification links timing out too quickly,High,,
+TC-008,Authentication,Logout Functionality,"1. Login to application
+2. Click logout button","User logged out, redirected to login page, session cleared",Logged in user,PASS,Logout working correctly,Medium,,
+TC-009,Authentication,Session Timeout,"1. Login to application
+2. Leave inactive for session timeout period","User automatically logged out, redirected to login",Any user account,PASS,Session management working,Medium,,
+TC-010,Authentication,Role-based Access Control,"1. Login as different roles
+2. Try accessing restricted pages","Access granted/denied based on user role",Admin/Driver/Parent accounts,PASS,Role-based access working,Critical,,
+TC-011,Admin Dashboard,View All Users,"1. Login as admin
+2. Navigate to admin dashboard
+3. View users list","Complete list of users displayed with details",Admin account,PASS,User list display working,High,,
+TC-012,Admin Dashboard,Username Visibility Fix,"1. Login as admin
+2. View user application cards
+3. Check username display","Username clearly visible on each user card",Admin account with users,PASS,Username visibility fixed,Medium,,
+TC-013,Admin Dashboard,Approve Pending User,"1. Login as admin
+2. Find pending user
+3. Click approve button","User status changed to 'approved', user can access full features",Pending user account,PASS,User approval working,High,,
+TC-014,Admin Dashboard,Reject Pending User,"1. Login as admin
+2. Find pending user
+3. Click reject button","User status changed to 'rejected', access restricted",Pending user account,PASS,User rejection working,High,,
+TC-015,Admin Dashboard,Delete User Account,"1. Login as admin
+2. Select user
+3. Click delete button
+4. Confirm deletion","User account permanently deleted from system",Any user account,PASS,User deletion working,High,,
+TC-016,Admin Dashboard,Search Users,"1. Login as admin
+2. Enter search term in search box
+3. View results","Users matching search criteria displayed",User database,PASS,Search functionality working,Medium,,
+TC-017,Admin Dashboard,Filter Users by Role,"1. Login as admin
+2. Select role filter (Parent/Driver/Admin)
+3. View filtered results","Only users of selected role displayed",Users of different roles,PASS,Role filtering working,Medium,,
+TC-018,Admin Dashboard,Filter Users by Status,"1. Login as admin
+2. Select status filter (Pending/Approved/Rejected)
+3. View results","Users filtered by selected status",Users with different statuses,FAIL,Filter not working correctly - showing all users regardless of status,Medium,,
+TC-019,Admin Dashboard,View User Details,"1. Login as admin
+2. Click on specific user
+3. View detailed information","Complete user profile and details displayed",Any user account,PASS,User details view working,Medium,,
+TC-020,Admin Dashboard,Edit User Information,"1. Login as admin
+2. Open user details
+3. Edit information
+4. Save changes","User information updated successfully",Any user account,PASS,User editing working,Medium,,
+TC-021,Child Management,Add New Child,"1. Login as parent
+2. Navigate to 'Add Child' form
+3. Fill all required fields (name, DOB, grade, etc.)
+4. Submit form","Child successfully added to parent's profile",Parent account,PASS,Child addition working,High,,
+TC-022,Child Management,Enhanced Date Picker Usage,"1. Open add/edit child form
+2. Click on Date of Birth field
+3. Use year/month dropdowns
+4. Select date","Date selected easily using improved date picker interface",Any date,PASS,Date picker enhancement working,Medium,,
+TC-023,Child Management,Edit Child Information,"1. Login as parent
+2. Select existing child
+3. Click edit button
+4. Modify details
+5. Save changes","Child information updated successfully",Existing child record,PASS,Child editing working,High,,
+TC-024,Child Management,Delete Child,"1. Login as parent
+2. Select child
+3. Click delete button
+4. Confirm deletion","Child removed from parent profile after confirmation",Existing child record,PASS,Child deletion working,Medium,,
+TC-025,Child Management,View Children List,"1. Login as parent
+2. Navigate to children section","All registered children displayed with their details",Parent with children,PASS,Children list display working,High,,
+TC-026,Child Management,Child Profile Photo Upload,"1. Edit child profile
+2. Upload profile photo
+3. Save changes","Photo uploaded and displayed in child profile",Image file,PASS,Photo upload working,Low,,
+TC-027,Child Management,Child Information Validation,"1. Enter invalid data in child form
+2. Attempt to submit","Validation errors displayed for invalid fields",Invalid data,PASS,Form validation working,Medium,,
+TC-028,Child Management,Add Child Location,"1. Add/edit child
+2. Set pickup/dropoff locations
+3. Save locations","Locations saved and associated with child",Location coordinates,PASS,Location assignment working,High,,
+TC-029,Driver Dashboard,View My Rides History,"1. Login as driver
+2. Navigate to 'My Rides' section
+3. View ride history","Real ride history displayed instead of dummy data",Driver with completed rides,PASS,Ride history functionality working,High,,
+TC-030,Driver Dashboard,Handle No Rides Scenario,"1. Login as new driver
+2. Navigate to 'My Rides' section","Appropriate message displayed when no rides found",New driver account,PASS,Empty state handling working,Medium,,
+TC-031,Driver Dashboard,View Upcoming Rides,"1. Login as driver
+2. Check upcoming rides section","Scheduled upcoming rides displayed",Driver with scheduled rides,PASS,Upcoming rides display working,High,,
+TC-032,Driver Dashboard,Accept Ride Request,"1. Receive ride request
+2. Click accept button","Ride status changes to 'accepted', notification sent to parent",Pending ride request,PASS,Ride acceptance working,Critical,,
+TC-033,Driver Dashboard,Reject Ride Request,"1. Receive ride request
+2. Click reject button","Ride status changes to 'rejected', alternative driver notified",Pending ride request,PASS,Ride rejection working,High,,
+TC-034,Driver Dashboard,Start Active Ride,"1. Login as driver
+2. Navigate to active ride
+3. Click 'Start Ride' button","Ride status changes to 'in_progress', tracking begins",Accepted ride,PASS,Ride start functionality working,Critical,,
+TC-035,Driver Dashboard,Complete Ride,"1. Have ride in progress
+2. Click 'Complete Ride' button","Ride status changes to 'completed', summary generated",In-progress ride,PASS,Ride completion working,Critical,,
+TC-036,Driver Dashboard,Mark Child Present,"1. During active ride
+2. Mark child as present at pickup","Child status updated to 'picked_up'",Active ride with children,PASS,Child status tracking working,High,,
+TC-037,Driver Dashboard,Mark Child Absent,"1. During active ride
+2. Mark child as absent","Child status updated to 'absent', parent notified",Active ride with children,PASS,Absence tracking working,High,,
+TC-038,Driver Dashboard,Mark Child Dropped Off,"1. During active ride
+2. Mark child as dropped off","Child status updated to 'dropped_off'",Active ride with children,PASS,Drop-off tracking working,High,,
+TC-039,Driver Dashboard,View Ride Summary,"1. Complete a ride
+2. View ride summary","Summary showing pickup/dropoff counts, duration, etc.",Completed ride,PASS,Ride summary working,Medium,,
+TC-040,Driver Dashboard,Vehicle Setup,"1. Login as driver
+2. Navigate to vehicle setup
+3. Enter vehicle details","Vehicle information saved to driver profile",Driver account,PASS,Vehicle setup working,High,,
+TC-041,Parent Dashboard,View Child's Live Location,"1. Login as parent
+2. Navigate to child tracking
+3. View child's current location","Child's real-time location displayed on map",Parent with active ride child,PASS,Live tracking working,Critical,,
+TC-042,Parent Dashboard,View Current Ride Status,"1. Login as parent
+2. Check ride status section","Current ride status displayed (pending/in-progress/completed)",Parent with booked ride,PASS,Ride status display working,High,,
+TC-043,Parent Dashboard,Book New Ride,"1. Login as parent
+2. Navigate to booking form
+3. Fill ride details
+4. Submit booking","Ride booking created successfully",Parent account with children,PASS,Ride booking working,Critical,,
+TC-044,Parent Dashboard,Cancel Booking,"1. Login as parent
+2. Find active booking
+3. Click cancel button
+4. Confirm cancellation","Booking cancelled, driver notified",Active booking,PASS,Booking cancellation working,High,,
+TC-045,Parent Dashboard,View Booking History,"1. Login as parent
+2. Navigate to booking history","List of all previous bookings displayed",Parent with booking history,PASS,Booking history working,Medium,,
+TC-046,Parent Dashboard,View Driver Information,"1. Login as parent
+2. View assigned driver details","Driver information and ratings displayed",Booking with assigned driver,PASS,Driver info display working,Medium,,
+TC-047,Parent Dashboard,Rate Driver,"1. Complete ride
+2. Submit driver rating
+3. Add comments","Rating saved and contributes to driver's overall rating",Completed ride,PASS,Driver rating working,Medium,,
+TC-048,Parent Dashboard,View Notifications,"1. Login as parent
+2. Check notifications section","All relevant notifications displayed",Parent account,PASS,Notification system working,Medium,,
+TC-049,Parent Dashboard,Child Options Modal,"1. Click on child card
+2. View available options","Modal displays with child-specific options",Parent with children,PASS,Child options modal working,Medium,,
+TC-050,Parent Dashboard,Live Ride Monitoring,"1. During active ride
+2. Monitor ride progress","Real-time ride updates and child status",Active ride,PASS,Live monitoring working,Critical,,
+TC-051,Google Maps Integration,Route Setup with Hardcoded API,"1. Navigate to route setup
+2. Set pickup/dropoff locations","Map displays without requiring API key input",Any location setup,PASS,API key hardcoding working,High,,
+TC-052,Google Maps Integration,Location Tracking,"1. Enable location services
+2. Track user location on map","Real-time location updates displayed on map",GPS-enabled device,PASS,Location tracking working,Critical,,
+TC-053,Google Maps Integration,Map Marker Display,"1. Add pickup/dropoff locations
+2. View markers on map","Markers displayed correctly at specified locations",Location coordinates,PASS,Map markers working,High,,
+TC-054,Google Maps Integration,Route Calculation,"1. Set start and end points
+2. Calculate route","Optimal route displayed on map",Two location points,PASS,Route calculation working,High,,
+TC-055,Google Maps Integration,Map Zoom and Navigation,"1. Use map zoom controls
+2. Pan around map","Map responds to zoom and pan gestures",Any map view,PASS,Map navigation working,Medium,,
+TC-056,Google Maps Integration,Map Error Handling,"1. Simulate network issues
+2. Try to load map","Graceful error handling, fallback message displayed",Network connectivity issues,PASS,Map error handling working,Medium,,
+TC-057,Google Maps Integration,Interactive Map Features,"1. Click on map elements
+2. Use interactive controls","Map interactions work as expected",Any map component,PASS,Interactive features working,Medium,,
+TC-058,Booking System,Create Single Ride Booking,"1. Login as parent
+2. Create one-time ride booking
+3. Fill all details","Single ride booking created successfully",Parent account,PASS,Single booking working,Critical,,
+TC-059,Booking System,Create Recurring Booking,"1. Login as parent
+2. Set up recurring ride
+3. Configure schedule","Recurring bookings created for specified dates",Parent account,PASS,Recurring booking working,High,,
+TC-060,Booking System,Edit Existing Booking,"1. Find existing booking
+2. Click edit
+3. Modify details
+4. Save changes","Booking details updated successfully",Existing booking,PASS,Booking editing working,High,,
+TC-061,Booking System,Booking Validation,"1. Enter invalid booking data
+2. Attempt to submit","Validation errors displayed for invalid fields",Invalid booking data,PASS,Booking validation working,Medium,,
+TC-062,Booking System,Driver Assignment,"1. Create booking
+2. System assigns driver","Appropriate driver assigned based on availability and location",Available drivers,PASS,Driver assignment working,Critical,,
+TC-063,Booking System,Booking Confirmation,"1. Submit booking
+2. Receive confirmation","Booking confirmation sent to parent and driver",Valid booking,PASS,Booking confirmation working,High,,
+TC-064,Booking System,Payment Integration,"1. Complete booking
+2. Process payment","Payment processed successfully",Payment details,PASS,Payment integration working,High,,
+TC-065,Ride Tracking,Real-time Location Updates,"1. Start ride
+2. Monitor location changes","Location updates in real-time during ride",Active ride,PASS,Real-time tracking working,Critical,,
+TC-066,Ride Tracking,Ride Timeline,"1. View ride details
+2. Check ride timeline","Complete timeline of ride events displayed",Any ride,PASS,Ride timeline working,Medium,,
+TC-067,Ride Tracking,Status Update Notifications,"1. Change ride status
+2. Check notifications","Status updates sent to relevant parties",Any ride status change,PASS,Status notifications working,High,,
+TC-068,Ride Tracking,GPS Accuracy,"1. Compare GPS location
+2. Verify with actual location","GPS location accurate within acceptable range",GPS-enabled device,PASS,GPS accuracy working,High,,
+TC-069,Ride Tracking,Offline Handling,"1. Simulate network loss
+2. Continue ride tracking","App handles offline scenario gracefully",Network connectivity issues,PASS,Offline handling working,Medium,,
+TC-070,Firebase Integration,User Data Synchronization,"1. Update user profile
+2. Check data across devices","Data synchronized across all connected devices",Multi-device setup,PASS,Data sync working,High,,
+TC-071,Firebase Integration,Real-time Database Updates,"1. Make data changes
+2. Observe real-time updates","Changes reflected immediately in real-time",Any data modification,PASS,Real-time updates working,High,,
+TC-072,Firebase Integration,Data Security Rules,"1. Attempt unauthorized access
+2. Try to access restricted data","Access denied for unauthorized requests",Unauthorized user,PASS,Security rules working,Critical,,
+TC-073,Firebase Integration,Authentication State Persistence,"1. Login and close app
+2. Reopen app","User remains logged in across app sessions",Any user account,PASS,Auth persistence working,High,,
+TC-074,Firebase Integration,Cloud Function Triggers,"1. Perform actions that trigger functions
+2. Verify function execution","Cloud functions execute as expected",Function trigger events,PASS,Cloud functions working,Medium,,
+TC-075,UI/UX Components,Field Styling Consistency,"1. Navigate through all forms
+2. Observe field styling","All form fields have consistent dark theme styling",All forms in app,PASS,Styling consistency working,Medium,,
+TC-076,UI/UX Components,Button Interactions,"1. Click various buttons
+2. Observe responses","All buttons respond appropriately to clicks",All buttons in app,PASS,Button interactions working,Medium,,
+TC-077,UI/UX Components,Modal Functionality,"1. Open various modals
+2. Test modal interactions","Modals open/close correctly, content displays properly",All modals in app,PASS,Modal functionality working,Medium,,
+TC-078,UI/UX Components,Form Validation Messages,"1. Submit forms with invalid data
+2. Observe validation messages","Clear, helpful validation messages displayed",Invalid form data,PASS,Form validation working,Medium,,
+TC-079,UI/UX Components,Toast Notifications,"1. Perform actions that trigger toasts
+2. Observe toast messages","Toast messages appear with correct content and styling",Various user actions,PASS,Toast notifications working,Medium,,
+TC-080,UI/UX Components,Loading States,"1. Trigger loading actions
+2. Observe loading indicators","Loading spinners and states display appropriately",Any loading action,PASS,Loading states working,Medium,,
+TC-081,UI/UX Components,Error Handling Display,"1. Trigger various errors
+2. Observe error displays","Errors displayed clearly with helpful messages",Various error conditions,PASS,Error displays working,Medium,,
+TC-082,UI/UX Components,Navigation Menu,"1. Use navigation menu
+2. Navigate between sections","Menu navigation works correctly",All navigation items,PASS,Navigation working,High,,
+TC-083,UI/UX Components,Responsive Design - Mobile,"1. Open app on mobile device
+2. Test all features","App layout adapts properly to mobile screen",Mobile device,PASS,Mobile responsiveness working,High,,
+TC-084,UI/UX Components,Responsive Design - Tablet,"1. Open app on tablet
+2. Test all features","App layout adapts properly to tablet screen",Tablet device,PASS,Tablet responsiveness working,Medium,,
+TC-085,UI/UX Components,Responsive Design - Desktop,"1. Open app on desktop
+2. Test all features","App layout works properly on desktop screen",Desktop browser,PASS,Desktop layout working,Medium,,
+TC-086,UI/UX Components,Dark Theme Implementation,"1. Use app in dark mode
+2. Check all components","All components properly styled for dark theme",Dark mode setting,PASS,Dark theme working,Medium,,
+TC-087,UI/UX Components,Calendar Component,"1. Open date picker
+2. Navigate calendar
+3. Select dates","Calendar navigation and date selection working",Any date selection,PASS,Calendar component working,Medium,,
+TC-088,UI/UX Components,Avatar Display,"1. Upload user avatar
+2. View avatar display","Avatar images display correctly throughout app",User with avatar,PASS,Avatar display working,Low,,
+TC-089,UI/UX Components,Progress Indicators,"1. Perform multi-step actions
+2. Observe progress","Progress indicators show current step/completion",Multi-step processes,PASS,Progress indicators working,Medium,,
+TC-090,UI/UX Components,Dropdown Menus,"1. Open various dropdowns
+2. Select options","Dropdown menus function correctly",All dropdown components,PASS,Dropdown functionality working,Medium,,
+TC-091,Security Features,Input Sanitization,"1. Enter potentially malicious input
+2. Submit forms","Input properly sanitized, no security vulnerabilities",Malicious input strings,PASS,Input sanitization working,Critical,,
+TC-092,Security Features,SQL Injection Prevention,"1. Enter SQL injection attempts
+2. Submit to database","SQL injection attempts blocked",SQL injection strings,PASS,SQL injection prevention working,Critical,,
+TC-093,Security Features,XSS Prevention,"1. Enter script injection attempts
+2. Observe handling","Script injection attempts neutralized",XSS attack strings,PASS,XSS prevention working,Critical,,
+TC-094,Security Features,Data Encryption,"1. Submit sensitive data
+2. Verify encryption in transit","Data encrypted during transmission",Sensitive user data,PASS,Data encryption working,Critical,,
+TC-095,Security Features,Session Security,"1. Test session management
+2. Verify session security","Sessions properly secured and managed",User sessions,PASS,Session security working,Critical,,
+TC-096,Performance,Page Load Times,"1. Navigate to various pages
+2. Measure load times","Pages load within acceptable time limits",All app pages,PASS,Performance acceptable,Medium,,
+TC-097,Performance,Database Query Performance,"1. Perform data operations
+2. Monitor response times","Database queries execute efficiently",Various data operations,PASS,Database performance good,Medium,,
+TC-098,Performance,Image Loading Optimization,"1. Load pages with images
+2. Observe loading behavior","Images load efficiently with proper optimization",Pages with images,PASS,Image optimization working,Medium,,
+TC-099,Performance,Network Request Optimization,"1. Monitor network requests
+2. Check for unnecessary calls","Network requests optimized, no redundant calls",App usage patterns,PASS,Network optimization working,Medium,,
+TC-100,Performance,Memory Usage,"1. Use app extensively
+2. Monitor memory consumption","Memory usage remains within acceptable limits",Extended app usage,PASS,Memory management good,Medium,,
+TC-101,Accessibility,Keyboard Navigation,"1. Navigate using only keyboard
+2. Access all features","All features accessible via keyboard navigation",Keyboard-only navigation,PASS,Keyboard accessibility working,Medium,,
+TC-102,Accessibility,Screen Reader Support,"1. Use screen reader
+2. Navigate through app","Screen reader can interpret all content",Screen reader software,PASS,Screen reader support working,Medium,,
+TC-103,Accessibility,Color Contrast,"1. Check color contrast ratios
+2. Verify readability","Text and background colors meet contrast requirements",All UI elements,PASS,Color contrast adequate,Medium,,
+TC-104,Accessibility,Focus Indicators,"1. Tab through interface
+2. Observe focus indicators","Clear focus indicators visible for all interactive elements",Tab navigation,PASS,Focus indicators working,Medium,,
+TC-105,Integration,Email Service Integration,"1. Trigger email notifications
+2. Verify email delivery","Emails sent successfully with correct content",Email triggering events,PASS,Email integration working,Medium,,
+TC-106,Integration,SMS/Push Notifications,"1. Trigger push notifications
+2. Verify delivery","Push notifications delivered to appropriate devices",Notification events,PASS,Push notifications working,Medium,,
+TC-107,Integration,Payment Gateway,"1. Process test payment
+2. Verify transaction","Payment processed successfully through gateway",Test payment data,PASS,Payment gateway working,High,,
+TC-108,Integration,Third-party APIs,"1. Use external API features
+2. Verify functionality","External APIs integrate properly with app",API-dependent features,PASS,API integration working,Medium,,
+TC-109,Data Management,Data Backup and Recovery,"1. Trigger data backup
+2. Test recovery process","Data backed up and recoverable",System data,PASS,Backup/recovery working,High,,
+TC-110,Data Management,Data Export Functionality,"1. Export user data
+2. Verify export format","Data exported in correct format",User data,PASS,Data export working,Medium,,
