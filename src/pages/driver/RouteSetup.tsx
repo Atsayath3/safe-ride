@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
@@ -33,6 +35,7 @@ const RouteSetup = () => {
   const [endPoint, setEndPoint] = useState<MapPoint | null>(
     userProfile?.routes?.endPoint || null
   );
+  const [routeQuality, setRouteQuality] = useState<'excellent' | 'good' | 'fair'>('good');
 
   const handleRouteSet = (start: MapPoint, end: MapPoint) => {
     setStartPoint(start);
@@ -53,7 +56,8 @@ const RouteSetup = () => {
     try {
       const routes = {
         startPoint: startPoint,
-        endPoint: endPoint
+        endPoint: endPoint,
+        quality: routeQuality
       };
 
       await updateUserProfile({ routes });
@@ -97,6 +101,47 @@ const RouteSetup = () => {
               initialStart={startPoint}
               initialEnd={endPoint}
             />
+          </CardContent>
+        </Card>
+
+        {/* Route Quality Selection */}
+        <Card className="border-orange-200 shadow-lg bg-white">
+          <CardHeader className="bg-gradient-to-r from-orange-50 to-white rounded-t-lg">
+            <CardTitle className="text-lg text-orange-900">Route Quality</CardTitle>
+            <p className="text-sm text-orange-600">
+              Rate your route's convenience and accessibility
+            </p>
+          </CardHeader>
+          <CardContent className="pt-4">
+            <div className="space-y-2">
+              <Label className="text-orange-800">Quality Rating</Label>
+              <Select value={routeQuality} onValueChange={(value: 'excellent' | 'good' | 'fair') => 
+                setRouteQuality(value)}>
+                <SelectTrigger className="border-orange-200 focus:border-orange-400">
+                  <SelectValue placeholder="Select route quality" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="excellent">
+                    <div className="flex flex-col">
+                      <span className="font-medium">Excellent</span>
+                      <span className="text-xs text-muted-foreground">Direct route, easy access, minimal traffic</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="good">
+                    <div className="flex flex-col">
+                      <span className="font-medium">Good</span>
+                      <span className="text-xs text-muted-foreground">Mostly direct, some detours, moderate traffic</span>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="fair">
+                    <div className="flex flex-col">
+                      <span className="font-medium">Fair</span>
+                      <span className="text-xs text-muted-foreground">Longer route, multiple detours, heavy traffic</span>
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </CardContent>
         </Card>
 

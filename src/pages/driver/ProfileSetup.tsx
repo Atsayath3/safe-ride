@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -16,17 +17,18 @@ const ProfileSetup = () => {
   const [formData, setFormData] = useState({
     firstName: '',
     lastName: '',
-    username: ''
+    username: '',
+    gender: '' as 'male' | 'female' | 'other' | ''
   });
   const [loading, setLoading] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
 
 
   const handleNameNext = () => {
-    if (!formData.firstName.trim() || !formData.lastName.trim() || !formData.username.trim()) {
+    if (!formData.firstName.trim() || !formData.lastName.trim() || !formData.username.trim() || !formData.gender) {
       toast({
         title: "Error",
-        description: "Please enter your first name, last name, and username",
+        description: "Please enter your first name, last name, username, and select your gender",
         variant: "destructive"
       });
       return;
@@ -46,12 +48,14 @@ const ProfileSetup = () => {
 
     setLoading(true);
     try {
-      await updateUserProfile({
+      const profileData = {
         ...formData,
+        gender: formData.gender as 'male' | 'female' | 'other',
         email: currentUser?.email ?? '',
-        role: 'driver',
-        status: 'pending'
-      });
+        role: 'driver' as const,
+        status: 'pending' as const
+      };
+      await updateUserProfile(profileData);
       
       navigate('/driver/city-selection');
     } catch (error: any) {
@@ -110,6 +114,21 @@ const ProfileSetup = () => {
                   className="border-orange-200 focus:border-orange-400"
                 />
                 <p className="text-xs text-orange-600">Choose a unique username for your account</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="gender" className="text-orange-800">Gender</Label>
+                <Select value={formData.gender} onValueChange={(value: 'male' | 'female' | 'other') => 
+                  setFormData(prev => ({ ...prev, gender: value }))}>
+                  <SelectTrigger className="border-orange-200 focus:border-orange-400">
+                    <SelectValue placeholder="Select your gender" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="male">Male</SelectItem>
+                    <SelectItem value="female">Female</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               
               <Button onClick={handleNameNext} className="w-full bg-orange-600 hover:bg-orange-700 text-white shadow-md">

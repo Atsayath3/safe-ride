@@ -14,7 +14,7 @@ const VehicleSetup = () => {
   const { updateUserProfile } = useAuth();
   
   const [vehicleData, setVehicleData] = useState({
-    type: '',
+    type: '' as 'van' | 'mini van' | 'school bus' | '',
     capacity: '',
     model: '',
     year: '',
@@ -24,9 +24,9 @@ const VehicleSetup = () => {
   const [loading, setLoading] = useState(false);
 
   const vehicleTypes = [
-    { value: 'school_bus', label: 'School Bus', capacity: '40-60' },
+    { value: 'school bus', label: 'School Bus', capacity: '40-60' },
     { value: 'van', label: 'Van', capacity: '8-15' },
-    { value: 'mini_van', label: 'Mini Van', capacity: '6-8' }
+    { value: 'mini van', label: 'Mini Van', capacity: '6-8' }
   ];
 
   const currentYear = new Date().getFullYear();
@@ -47,7 +47,11 @@ const VehicleSetup = () => {
 
     setLoading(true);
     try {
-      await updateUserProfile({ vehicle: vehicleData });
+      const vehicleProfile = {
+        ...vehicleData,
+        type: vehicleData.type as 'van' | 'mini van' | 'school bus'
+      };
+      await updateUserProfile({ vehicle: vehicleProfile });
       navigate('/driver/welcome');
     } catch (error: any) {
       toast({
@@ -75,7 +79,7 @@ const VehicleSetup = () => {
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label className="text-orange-800">Vehicle Type</Label>
-              <Select value={vehicleData.type} onValueChange={(value) => 
+              <Select value={vehicleData.type} onValueChange={(value: 'van' | 'mini van' | 'school bus') => 
                 setVehicleData(prev => ({ ...prev, type: value }))
               }>
                 <SelectTrigger className="border-orange-200">
