@@ -24,7 +24,7 @@ const VehicleSetup = () => {
   const [loading, setLoading] = useState(false);
 
   const vehicleTypes = [
-    { value: 'school bus', label: 'School Bus', capacity: '40-60' },
+    { value: 'school bus', label: 'School Bus', capacity: '20+' },
     { value: 'van', label: 'Van', capacity: '8-15' },
     { value: 'mini van', label: 'Mini Van', capacity: '6-8' }
   ];

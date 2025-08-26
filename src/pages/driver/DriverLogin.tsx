@@ -11,7 +11,7 @@ import { Truck, Mail, Lock, Eye, EyeOff, AlertTriangle, Shield, ArrowLeft } from
 
 const DriverLogin = () => {
   const navigate = useNavigate();
-  const { login, signup } = useAuth();
+  const { loginWithRole, signup } = useAuth();
   
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
@@ -51,7 +51,7 @@ const DriverLogin = () => {
     setLoading(true);
     try {
       if (isLogin) {
-        await login(formData.email, formData.password);
+        await loginWithRole(formData.email, formData.password, 'driver');
         toast({
           title: "Welcome back!",
           description: "Successfully logged in to your driver account",
@@ -71,7 +71,7 @@ const DriverLogin = () => {
       let errorMessage = 'Authentication failed';
       switch (error.code) {
         case 'auth/user-not-found':
-          errorMessage = 'No account found with this email. Please sign up first.';
+          errorMessage = 'No driver account found with this email. Please sign up first.';
           break;
         case 'auth/wrong-password':
           errorMessage = 'Incorrect password. Please try again.';

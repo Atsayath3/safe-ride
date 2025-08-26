@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
-import { auth, db } from '@/lib/firebase';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,6 +12,7 @@ import MobileLayout from '@/components/mobile/MobileLayout';
 
 const AdminLogin = () => {
   const navigate = useNavigate();
+  const { loginWithRole } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -32,40 +31,12 @@ const AdminLogin = () => {
     setLoading(true);
     
     try {
-      // Sign in with email and password
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-
-      // Check if user is admin - try both collections
-      let userDoc = await getDoc(doc(db, 'admins', user.uid));
-      let userData = null;
-      
-      if (userDoc.exists()) {
-        userData = userDoc.data();
-      } else {
-        // Fallback: also check users collection for backward compatibility
-        userDoc = await getDoc(doc(db, 'users', user.uid));
-        if (userDoc.exists()) {
-          userData = userDoc.data();
-        }
-      }
-      
-      if (userData) {
-        if (userData.role === 'admin') {
-          toast({
-            title: "Welcome Admin!",
-            description: "Successfully logged in to admin dashboard",
-          });
-          navigate('/admin/dashboard');
-        } else {
-          // Sign out if not admin
-          await auth.signOut();
-          setError('Access denied. Admin privileges required.');
-        }
-      } else {
-        await auth.signOut();
-        setError('User not found in system');
-      }
+      await loginWithRole(email, password, 'admin');
+      toast({
+        title: "Welcome Admin!",
+        description: "Successfully logged in to admin dashboard",
+      });
+      navigate('/admin/dashboard');
     } catch (error: any) {
       console.error('Login error:', error);
       

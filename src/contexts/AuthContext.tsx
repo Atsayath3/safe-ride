@@ -56,6 +56,7 @@ interface AuthContextType {
   userProfile: UserProfile | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
+  loginWithRole: (email: string, password: string, expectedRole: 'parent' | 'driver' | 'admin') => Promise<void>;
   signup: (email: string, password: string, role: 'parent' | 'driver') => Promise<void>;
   logout: () => Promise<void>;
   sendPhoneOTP: (phoneNumber: string) => Promise<ConfirmationResult>;
@@ -81,6 +82,62 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const login = async (email: string, password: string) => {
     await signInWithEmailAndPassword(auth, email, password);
+  };
+
+  const loginWithRole = async (email: string, password: string, expectedRole: 'parent' | 'driver' | 'admin') => {
+    try {
+      // First, sign in with email and password
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      // Determine the collection to check based on expected role
+      const collectionName = expectedRole === 'driver' ? 'drivers' : 
+                            expectedRole === 'parent' ? 'parents' : 'admins';
+
+      // Check if user exists in the expected role collection
+      const userDoc = await getDoc(doc(db, collectionName, user.uid));
+      
+      if (!userDoc.exists()) {
+        // If not found in expected collection, check if user exists in other collections
+        const collections = ['drivers', 'parents', 'admins', 'users'];
+        let foundInCollection = null;
+        let userData = null;
+
+        for (const collection of collections) {
+          if (collection !== collectionName) {
+            const docRef = doc(db, collection, user.uid);
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+              foundInCollection = collection;
+              userData = docSnap.data();
+              break;
+            }
+          }
+        }
+
+        // Sign out the user since they don't have the right role
+        await auth.signOut();
+
+        if (foundInCollection) {
+          const userRole = userData?.role || foundInCollection.slice(0, -1); // Remove 's' from collection name
+          throw new Error(`Access denied. This account is registered as a ${userRole}. Please use the correct login page.`);
+        } else {
+          throw new Error(`No ${expectedRole} account found with this email address.`);
+        }
+      }
+
+      // Verify the role in the document matches expected role
+      const userData = userDoc.data();
+      if (userData.role !== expectedRole) {
+        await auth.signOut();
+        throw new Error(`Access denied. This account is registered as a ${userData.role}. Please use the correct login page.`);
+      }
+
+      // If we get here, the user has the correct role and is logged in
+    } catch (error: any) {
+      // Re-throw the error to be handled by the calling component
+      throw error;
+    }
   };
 
   const signup = async (email: string, password: string, role: 'parent' | 'driver') => {
@@ -243,6 +300,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     userProfile,
     loading,
     login,
+    loginWithRole,
     signup,
     logout,
     sendPhoneOTP,

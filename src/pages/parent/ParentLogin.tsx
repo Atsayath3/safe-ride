@@ -11,7 +11,7 @@ import { toast } from '@/hooks/use-toast';
 
 const ParentLogin = () => {
   const navigate = useNavigate();
-  const { login, signup } = useAuth();
+  const { loginWithRole, signup } = useAuth();
   
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
@@ -56,7 +56,7 @@ const ParentLogin = () => {
     setLoading(true);
     try {
       if (isLogin) {
-        await login(formData.email, formData.password);
+        await loginWithRole(formData.email, formData.password, 'parent');
         toast({
           title: "Welcome back!",
           description: "Successfully logged in to your parent account",
@@ -76,7 +76,7 @@ const ParentLogin = () => {
       let errorMessage = 'Authentication failed';
       switch (error.code) {
         case 'auth/user-not-found':
-          errorMessage = 'No account found with this email. Please sign up first.';
+          errorMessage = 'No parent account found with this email. Please sign up first.';
           break;
         case 'auth/wrong-password':
           errorMessage = 'Incorrect password. Please try again.';
