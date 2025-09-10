@@ -39,16 +39,41 @@ const ParentProfileSetup = () => {
     <MobileLayout title="Complete Your Profile" theme="parent">
       <form className="space-y-6 p-4" onSubmit={handleSubmit}>
         <div>
-          <Label htmlFor="firstName">First Name</Label>
-          <Input id="firstName" name="firstName" value={form.firstName} onChange={handleChange} required />
+          <Label htmlFor="firstName" className="text-blue-900 font-medium">First Name</Label>
+          <Input 
+            id="firstName" 
+            name="firstName" 
+            value={form.firstName} 
+            onChange={handleChange} 
+            className="mt-1 border-blue-200 focus:border-blue-500 focus:ring-blue-500" 
+            placeholder="Enter your first name"
+            required 
+          />
         </div>
         <div>
-          <Label htmlFor="lastName">Last Name</Label>
-          <Input id="lastName" name="lastName" value={form.lastName} onChange={handleChange} required />
+          <Label htmlFor="lastName" className="text-blue-900 font-medium">Last Name</Label>
+          <Input 
+            id="lastName" 
+            name="lastName" 
+            value={form.lastName} 
+            onChange={handleChange} 
+            className="mt-1 border-blue-200 focus:border-blue-500 focus:ring-blue-500"
+            placeholder="Enter your last name"
+            required 
+          />
         </div>
         <div>
-          <Label htmlFor="phone">Phone Number</Label>
-          <Input id="phone" name="phone" value={form.phone} onChange={handleChange} required />
+          <Label htmlFor="phone" className="text-blue-900 font-medium">Phone Number</Label>
+          <Input 
+            id="phone" 
+            name="phone" 
+            type="tel"
+            value={form.phone} 
+            onChange={handleChange} 
+            className="mt-1 border-blue-200 focus:border-blue-500 focus:ring-blue-500"
+            placeholder="Enter your phone number"
+            required 
+          />
         </div>
         <Button type="submit" className="w-full bg-blue-600 hover:bg-blue-700 text-white shadow-md" disabled={loading}>
           {loading ? 'Saving...' : 'Save & Continue'}

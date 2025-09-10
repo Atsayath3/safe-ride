@@ -57,10 +57,29 @@ const AdminDashboard = () => {
       );
       
       const querySnapshot = await getDocs(driversQuery);
-      const drivers = querySnapshot.docs.map(doc => ({
-        ...doc.data(),
-        createdAt: doc.data().createdAt?.toDate() || new Date()
-      })) as UserProfile[];
+      const drivers = querySnapshot.docs.map(doc => {
+        const data = doc.data();
+        
+        // Handle different createdAt formats safely
+        let createdAt = new Date();
+        if (data.createdAt) {
+          if (typeof data.createdAt.toDate === 'function') {
+            // Firestore Timestamp
+            createdAt = data.createdAt.toDate();
+          } else if (data.createdAt instanceof Date) {
+            // Regular Date object
+            createdAt = data.createdAt;
+          } else if (typeof data.createdAt === 'string') {
+            // String date
+            createdAt = new Date(data.createdAt);
+          }
+        }
+        
+        return {
+          ...data,
+          createdAt
+        };
+      }) as UserProfile[];
       
       setPendingDrivers(drivers);
     } catch (error) {

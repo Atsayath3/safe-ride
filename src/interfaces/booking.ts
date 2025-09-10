@@ -23,6 +23,11 @@ export interface Booking {
   createdAt: Date;
   updatedAt: Date;
   notes?: string;
+  // Pricing information
+  totalPrice?: number; // Total price in Sri Lankan Rupees
+  distance?: number; // Distance in kilometers
+  pricePerKm?: number; // Rate per kilometer (default Rs.25)
+  driverAvailability?: number; // Driver availability percentage when booked
 }
 
 export interface DriverAvailability {
@@ -53,4 +58,9 @@ export interface BookingRequest {
   recurringDays?: number;
   dailyTime?: string;
   notes?: string;
+  // Pricing information
+  totalPrice?: number;
+  distance?: number;
+  pricePerKm?: number;
+  driverAvailability?: number;
 }

@@ -86,23 +86,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const loginWithRole = async (email: string, password: string, expectedRole: 'parent' | 'driver' | 'admin') => {
     try {
+      console.log(`🔐 Attempting ${expectedRole} login for:`, email);
+      
       // First, sign in with email and password
       const userCredential = await signInWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
+      console.log('✅ Firebase Auth login successful:', user.uid);
 
       // Determine the collection to check based on expected role
       const collectionName = expectedRole === 'driver' ? 'drivers' : 
-                            expectedRole === 'parent' ? 'parents' : 'admins';
+                            expectedRole === 'parent' ? 'parents' : 'users';
 
+      console.log(`🔍 Checking for user in ${collectionName} collection...`);
+      
       // Check if user exists in the expected role collection
       const userDoc = await getDoc(doc(db, collectionName, user.uid));
       
       if (!userDoc.exists()) {
+        console.log(`❌ User not found in ${collectionName} collection`);
+        
         // If not found in expected collection, check if user exists in other collections
-        const collections = ['drivers', 'parents', 'admins', 'users'];
+        const collections = ['drivers', 'parents', 'users'];
         let foundInCollection = null;
         let userData = null;
 
+        console.log('🔍 Searching in other collections...');
         for (const collection of collections) {
           if (collection !== collectionName) {
             const docRef = doc(db, collection, user.uid);
@@ -110,6 +118,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (docSnap.exists()) {
               foundInCollection = collection;
               userData = docSnap.data();
+              console.log(`🔍 Found user in ${collection} collection with role:`, userData?.role);
               break;
             }
           }
@@ -120,45 +129,89 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         if (foundInCollection) {
           const userRole = userData?.role || foundInCollection.slice(0, -1); // Remove 's' from collection name
+          console.log(`🔍 Found user in ${foundInCollection} collection with role:`, userData?.role);
+          console.log(`🔍 Expected role was:`, expectedRole);
+          
+          // For admin users in the users collection, don't throw an error if the role matches
+          if (foundInCollection === 'users' && userData?.role && 
+              userData.role.toString().trim().toLowerCase() === expectedRole.toLowerCase()) {
+            console.log(`✅ Admin user found in users collection with correct role`);
+            return; // Allow the login to continue
+          }
+          
           throw new Error(`Access denied. This account is registered as a ${userRole}. Please use the correct login page.`);
         } else {
-          throw new Error(`No ${expectedRole} account found with this email address.`);
+          // No user document found in any collection - this means the database was cleared
+          // but the Firebase Auth user still exists. We should allow re-registration.
+          console.log('❌ No user document found in any collection');
+          throw new Error(`No ${expectedRole} account found. Please sign up first or use a different email.`);
         }
       }
 
       // Verify the role in the document matches expected role
       const userData = userDoc.data();
-      if (userData.role !== expectedRole) {
+      console.log(`✅ Found user in ${collectionName} with role:`, userData.role);
+      console.log(`🔍 Expected role:`, expectedRole);
+      console.log(`🔍 Role comparison:`, userData.role, '!==', expectedRole, '=', userData.role !== expectedRole);
+      
+      // Normalize roles for comparison (handle case sensitivity and whitespace)
+      const actualRole = (userData.role || '').toString().trim().toLowerCase();
+      const expectedRoleNormalized = expectedRole.trim().toLowerCase();
+      
+      console.log(`🔍 Normalized comparison:`, actualRole, '!==', expectedRoleNormalized, '=', actualRole !== expectedRoleNormalized);
+      
+      if (actualRole !== expectedRoleNormalized) {
         await auth.signOut();
         throw new Error(`Access denied. This account is registered as a ${userData.role}. Please use the correct login page.`);
       }
 
+      console.log(`🎉 ${expectedRole} login successful`);
       // If we get here, the user has the correct role and is logged in
     } catch (error: any) {
+      console.error(`❌ Login error for ${expectedRole}:`, error);
       // Re-throw the error to be handled by the calling component
       throw error;
     }
   };
 
   const signup = async (email: string, password: string, role: 'parent' | 'driver') => {
-    const { user } = await createUserWithEmailAndPassword(auth, email, password);
-    
-    const profile: UserProfile = {
-      uid: user.uid,
-      email: user.email || undefined,
-      role,
-      status: role === 'driver' ? 'pending' : undefined,
-      profileComplete: false,
-      createdAt: new Date()
-    };
+    try {
+      console.log(`🔐 Creating ${role} account for:`, email);
+      
+      const { user } = await createUserWithEmailAndPassword(auth, email, password);
+      console.log('✅ Firebase Auth user created:', user.uid);
+      
+      const profile: UserProfile = {
+        uid: user.uid,
+        email: user.email || undefined,
+        role,
+        profileComplete: false,
+        createdAt: new Date()
+      };
+
+      // Only add status field for drivers (avoid undefined values)
+      if (role === 'driver') {
+        profile.status = 'pending';
+      }
+
+      console.log(`📝 Creating ${role} profile in Firestore:`, profile);
 
       if (role === 'driver') {
         await setDoc(doc(db, 'drivers', user.uid), profile);
+        console.log('✅ Driver profile created in drivers collection');
       } else if (role === 'parent') {
         await setDoc(doc(db, 'parents', user.uid), profile);
+        console.log('✅ Parent profile created in parents collection');
       } else if (role === 'admin') {
         await setDoc(doc(db, 'admins', user.uid), profile);
+        console.log('✅ Admin profile created in admins collection');
       }
+      
+      console.log(`🎉 ${role} signup completed successfully`);
+    } catch (error) {
+      console.error(`❌ Error during ${role} signup:`, error);
+      throw error;
+    }
   };
 
   const logout = async () => {
@@ -181,9 +234,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!querySnapshot.empty) {
       const doc = querySnapshot.docs[0];
       const data = doc.data();
+      
+      // Handle different createdAt formats safely
+      let createdAt = new Date();
+      if (data.createdAt) {
+        if (typeof data.createdAt.toDate === 'function') {
+          // Firestore Timestamp
+          createdAt = data.createdAt.toDate();
+        } else if (data.createdAt instanceof Date) {
+          // Regular Date object
+          createdAt = data.createdAt;
+        } else if (typeof data.createdAt === 'string') {
+          // String date
+          createdAt = new Date(data.createdAt);
+        }
+      }
+      
       return {
         ...data,
-        createdAt: data.createdAt?.toDate() || new Date()
+        createdAt
       } as UserProfile;
     }
     
@@ -259,24 +328,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (docSnap.exists()) {
         const data = docSnap.data();
+        
+        // Handle different createdAt formats safely
+        let createdAt = new Date();
+        if (data.createdAt) {
+          if (typeof data.createdAt.toDate === 'function') {
+            // Firestore Timestamp
+            createdAt = data.createdAt.toDate();
+          } else if (data.createdAt instanceof Date) {
+            // Regular Date object
+            createdAt = data.createdAt;
+          } else if (typeof data.createdAt === 'string') {
+            // String date
+            createdAt = new Date(data.createdAt);
+          }
+        }
+        
         setUserProfile({
           ...data,
-          createdAt: data.createdAt?.toDate() || new Date()
+          createdAt
         } as UserProfile);
         return;
       }
     }
     
-    // If no profile exists in any collection, create a basic one in users
-    const basicProfile: UserProfile = {
-      uid,
-      role: 'driver',
-      profileComplete: false,
-      createdAt: new Date()
-    };
-    const docRef = doc(db, 'users', uid);
-    await setDoc(docRef, basicProfile);
-    setUserProfile(basicProfile);
+    // If no profile exists, set userProfile to null
+    // The signup process should handle profile creation
+    console.log('No user profile found for UID:', uid);
+    setUserProfile(null);
   };
 
   useEffect(() => {

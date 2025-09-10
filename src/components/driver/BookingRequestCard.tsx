@@ -3,8 +3,9 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { MapPin, Calendar, Clock, User, Phone, CalendarDays } from 'lucide-react';
+import { MapPin, Calendar, Clock, User, Phone, CalendarDays, DollarSign } from 'lucide-react';
 import { Booking } from '@/interfaces/booking';
+import { PricingService } from '@/services/pricingService';
 import { format, differenceInDays } from 'date-fns';
 
 interface BookingRequestCardProps {
@@ -84,6 +85,22 @@ const BookingRequestCard: React.FC<BookingRequestCardProps> = ({
                       <span className="ml-1">(weekends excluded)</span>
                     )}
                   </div>
+                  {booking.totalPrice && (
+                    <div className="flex items-center justify-between mt-2 pt-2 border-t border-blue-200">
+                      <div className="flex items-center gap-1">
+                        <DollarSign className="w-3 h-3 text-blue-600" />
+                        <span className="text-xs text-blue-600">Total Price:</span>
+                      </div>
+                      <span className="text-sm font-semibold text-blue-900">
+                        {PricingService.formatPrice(booking.totalPrice)}
+                      </span>
+                    </div>
+                  )}
+                  {booking.distance && (
+                    <div className="text-xs text-blue-600 mt-1">
+                      Distance: {booking.distance} km @ Rs.{booking.pricePerKm || 25}/km
+                    </div>
+                  )}
                 </div>
               </>
             ) : (

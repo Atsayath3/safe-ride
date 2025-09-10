@@ -31,20 +31,29 @@ import AddChild from "./pages/parent/AddChild";
 import AddChildLocations from "./pages/parent/AddChildLocations";
 import EditChild from "./pages/parent/EditChild";
 import ParentProfileSetup from "./pages/parent/ParentProfileSetup";
+import DatabaseStatus from "./components/DatabaseStatus";
+import StorageRulesTester from "./components/test/StorageRulesTester";
+import BookingDiagnosticSimple from "./components/test/BookingDiagnosticSimple";
+import QuickDriverFixer from "./components/test/QuickDriverFixer";
+import BookingFlowDebugger from "./components/test/BookingFlowDebugger";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <AuthProvider>
-      <TooltipProvider>
-        <AnimatedBackground />
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
+const App = () => {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <TooltipProvider>
+          <AnimatedBackground />
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
           <Routes>
             <Route path="/" element={<Welcome />} />
             <Route path="/landing" element={<Index />} />
+            
+            {/* Development Tools - Only available in development */}
+            <Route path="/dev/cleanup" element={<DatabaseStatus />} />
             
             {/* Driver Routes */}
             <Route path="/driver/login" element={<DriverLogin />} />
@@ -61,6 +70,11 @@ const App = () => (
             <Route path="/driver/vehicle-setup" element={
               <ProtectedRoute requiredRole="driver">
                 <VehicleSetup />
+              </ProtectedRoute>
+            } />
+            <Route path="/driver/route-setup" element={
+              <ProtectedRoute requiredRole="driver">
+                <RouteSetup />
               </ProtectedRoute>
             } />
             <Route path="/driver/welcome" element={
@@ -132,6 +146,12 @@ const App = () => (
               </ProtectedRoute>
             } />
             
+            {/* Testing Routes */}
+            <Route path="/test/storage-rules" element={<StorageRulesTester />} />
+            <Route path="/test/booking-diagnostic" element={<BookingDiagnosticSimple />} />
+            <Route path="/test/fix-drivers" element={<QuickDriverFixer />} />
+            <Route path="/test/booking-flow" element={<BookingFlowDebugger />} />
+            
             {/* Admin Routes */}
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin/dashboard" element={
@@ -146,6 +166,7 @@ const App = () => (
       </TooltipProvider>
     </AuthProvider>
   </QueryClientProvider>
-);
+  );
+};
 
 export default App;

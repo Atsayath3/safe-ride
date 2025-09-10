@@ -1,8 +1,9 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
+import { notificationService } from '@/services/notificationService';
 import { toast } from '@/hooks/use-toast';
 import MobileLayout from '@/components/mobile/MobileLayout';
 import { Camera, Upload, CheckCircle, AlertCircle, FileText, Image } from 'lucide-react';
@@ -18,6 +19,40 @@ const DocumentUpload = () => {
   
   const [uploading, setUploading] = useState(false);
   const [uploadedFile, setUploadedFile] = useState<string | null>(null);
+
+  // Test Firebase Storage connection
+  const testStorageConnection = async () => {
+    try {
+      console.log('🧪 Testing Firebase Storage connection...');
+      console.log('🔥 Storage instance:', storage);
+      console.log('🔗 Storage app:', storage.app);
+      console.log('📁 Storage bucket:', storage.app.options.storageBucket);
+      
+      // Test creating a reference
+      const testRef = ref(storage, 'test/connection.txt');
+      console.log('✅ Storage reference created successfully:', testRef);
+      console.log('📍 Full path:', testRef.fullPath);
+      console.log('🪣 Bucket:', testRef.bucket);
+      
+      // Log the expected path for rules
+      if (currentUser?.uid) {
+        const expectedPath = `driver-documents/${currentUser.uid}/test-document.jpg`;
+        const expectedRef = ref(storage, expectedPath);
+        console.log('📋 Expected upload path for rules:', expectedPath);
+        console.log('📋 Expected ref:', expectedRef.fullPath);
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('❌ Storage connection test failed:', error);
+      return false;
+    }
+  };
+
+  // Test storage connection on component mount
+  useEffect(() => {
+    testStorageConnection();
+  }, []);
 
   const documentLabels: Record<string, string> = {
     nic: 'National ID Card',
@@ -36,21 +71,43 @@ const DocumentUpload = () => {
   const isProfilePicture = documentType === 'profile';
 
   const uploadToStorage = async (dataUrl: string): Promise<string> => {
-    // Convert data URL to blob
-    const response = await fetch(dataUrl);
-    const blob = await response.blob();
-    
-    // Create a unique filename
-    const timestamp = Date.now();
-    const fileName = `${documentType}_${timestamp}.jpg`;
-    const storageRef = ref(storage, `documents/${currentUser?.uid}/${fileName}`);
-    
-    // Upload the file
-    await uploadBytes(storageRef, blob);
-    
-    // Get the download URL
-    const downloadURL = await getDownloadURL(storageRef);
-    return downloadURL;
+    try {
+      console.log('🔄 Starting upload process...');
+      console.log('📁 Current user UID:', currentUser?.uid);
+      console.log('📄 Document type:', documentType);
+      
+      // Convert data URL to blob
+      const response = await fetch(dataUrl);
+      const blob = await response.blob();
+      console.log('📦 Blob created, size:', blob.size, 'type:', blob.type);
+      
+      // Create a unique filename
+      const timestamp = Date.now();
+      const fileName = `${documentType}_${timestamp}.jpg`;
+      const uploadPath = `driver-documents/${currentUser?.uid}/${fileName}`;
+      console.log('📍 Upload path:', uploadPath);
+      
+      const storageRef = ref(storage, uploadPath);
+      console.log('🔗 Storage ref created');
+      
+      // Upload the file
+      console.log('⬆️ Starting upload...');
+      await uploadBytes(storageRef, blob);
+      console.log('✅ Upload successful!');
+      
+      // Get the download URL
+      console.log('🔗 Getting download URL...');
+      const downloadURL = await getDownloadURL(storageRef);
+      console.log('✅ Download URL obtained:', downloadURL);
+      
+      return downloadURL;
+    } catch (error) {
+      console.error('❌ Upload error details:', error);
+      console.error('Error code:', (error as any)?.code);
+      console.error('Error message:', (error as any)?.message);
+      console.error('Error stack:', (error as any)?.stack);
+      throw error;
+    }
   };
 
   const takePicture = async () => {
@@ -225,17 +282,49 @@ const DocumentUpload = () => {
       
       const fieldName = documentFieldMap[documentType!];
       
+      const updatedDocuments = {
+        ...userProfile?.documents,
+        [fieldName]: downloadURL
+      };
+      
       await updateUserProfile({
-        documents: {
-          ...userProfile?.documents,
-          [fieldName]: downloadURL
-        }
+        documents: updatedDocuments
       });
       
-      toast({
-        title: "Success",
-        description: "Document uploaded and saved successfully"
-      });
+      // Check if all required documents are now uploaded
+      const requiredDocuments = ['nic', 'vehicleInsurance', 'vehicleLicense', 'profilePicture'];
+      const allDocumentsUploaded = requiredDocuments.every(doc => updatedDocuments[doc]);
+      
+      if (allDocumentsUploaded && userProfile && !userProfile.profileComplete) {
+        try {
+          // Mark profile as complete and notify admins
+          await updateUserProfile({ profileComplete: true });
+          
+          // Send notification to all admins about driver verification
+          await notificationService.sendDriverVerificationNotification(
+            userProfile.uid,
+            `${userProfile.firstName} ${userProfile.lastName}` || 'New Driver',
+            userProfile.email || 'No email provided'
+          );
+          
+          toast({
+            title: "Registration Complete! 🎉",
+            description: "All documents uploaded successfully. Admins have been notified for verification."
+          });
+        } catch (notificationError) {
+          console.error('Failed to send admin notification:', notificationError);
+          // Don't fail the whole process if notification fails
+          toast({
+            title: "Documents Uploaded",
+            description: "Document uploaded successfully. Profile completed!"
+          });
+        }
+      } else {
+        toast({
+          title: "Success",
+          description: "Document uploaded and saved successfully"
+        });
+      }
       
       navigate('/driver/welcome');
     } catch (error: any) {

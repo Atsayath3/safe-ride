@@ -13,6 +13,7 @@ import DeleteChildConfirmation from '@/components/parent/DeleteChildConfirmation
 import DriverSelectionModal from '@/components/parent/DriverSelectionModal';
 import BookingConfirmationModal from '@/components/parent/BookingConfirmationModal';
 import ActiveRideMonitor from '@/components/parent/ActiveRideMonitor';
+import NotificationBell from '@/components/NotificationBell';
 import { useAuth, UserProfile } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import { LogOut } from 'lucide-react';
@@ -175,7 +176,7 @@ const ParentDashboard = () => {
     setSelectedDriver(null);
     toast({
       title: "Booking Successful!",
-      description: "Your ride has been booked successfully.",
+      description: "Your ride has been confirmed with the driver. No further approval needed.",
     });
   };
 
@@ -202,15 +203,18 @@ const ParentDashboard = () => {
       title={`Welcome, ${userProfile?.firstName || 'Parent'}!`}
       theme="parent"
       rightContent={
-        <Button
-          onClick={handleLogout}
-          variant="outline"
-          size="sm"
-          className="rounded-xl font-medium px-3 py-2 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300"
-        >
-          <LogOut className="h-4 w-4 mr-1" />
-          Logout
-        </Button>
+        <div className="flex items-center gap-2">
+          <NotificationBell />
+          <Button
+            onClick={handleLogout}
+            variant="outline"
+            size="sm"
+            className="rounded-xl font-medium px-3 py-2 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300"
+          >
+            <LogOut className="h-4 w-4 mr-1" />
+            Logout
+          </Button>
+        </div>
       }
     >
       <div className="flex flex-col h-screen">

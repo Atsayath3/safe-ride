@@ -6,6 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import MobileLayout from '@/components/mobile/MobileLayout';
 import ActiveRideTracker from '@/components/driver/ActiveRideTracker';
+import NotificationBell from '@/components/NotificationBell';
 import { MapPin, Clock, Users, Settings, Calendar, Play, Route } from 'lucide-react';
 import { doc, updateDoc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
@@ -251,6 +252,7 @@ const DriverDashboard = () => {
         showMenu={true}
         onMenu={() => navigate('/driver/profile')}
         theme="driver"
+        rightContent={<NotificationBell />}
       >
       <div className="p-4 space-y-6 min-h-screen">
         {/* Active Ride Section */}

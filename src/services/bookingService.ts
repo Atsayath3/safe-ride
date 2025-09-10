@@ -2,6 +2,7 @@ import {
   collection, 
   doc, 
   getDocs, 
+  getDoc,
   addDoc, 
   updateDoc, 
   query, 
@@ -175,9 +176,20 @@ export class BookingService {
         updatedAt: new Date(),
       };
 
+      // Helper function to remove undefined values
+      const cleanUndefinedValues = (obj: any): any => {
+        const cleaned: any = {};
+        for (const [key, value] of Object.entries(obj)) {
+          if (value !== undefined) {
+            cleaned[key] = value;
+          }
+        }
+        return cleaned;
+      };
+
       // Prepare data for Firestore with proper Timestamp conversion
       const firestoreData: any = {
-        ...bookingData,
+        ...cleanUndefinedValues(bookingData),
         bookingDate: Timestamp.fromDate(bookingData.bookingDate),
         rideDate: Timestamp.fromDate(bookingData.rideDate),
         createdAt: Timestamp.fromDate(bookingData.createdAt),
@@ -194,6 +206,50 @@ export class BookingService {
       return docRef.id;
     } catch (error) {
       console.error('Error creating booking:', error);
+      throw error;
+    }
+  }
+
+  static async createConfirmedBooking(bookingRequest: BookingRequest): Promise<string> {
+    try {
+      const bookingData: Omit<Booking, 'id'> = {
+        ...bookingRequest,
+        status: 'confirmed', // Directly set to confirmed - no driver approval needed
+        bookingDate: new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      };
+
+      // Helper function to remove undefined values
+      const cleanUndefinedValues = (obj: any): any => {
+        const cleaned: any = {};
+        for (const [key, value] of Object.entries(obj)) {
+          if (value !== undefined) {
+            cleaned[key] = value;
+          }
+        }
+        return cleaned;
+      };
+
+      // Prepare data for Firestore with proper Timestamp conversion
+      const firestoreData: any = {
+        ...cleanUndefinedValues(bookingData),
+        bookingDate: Timestamp.fromDate(bookingData.bookingDate),
+        rideDate: Timestamp.fromDate(bookingData.rideDate),
+        createdAt: Timestamp.fromDate(bookingData.createdAt),
+        updatedAt: Timestamp.fromDate(bookingData.updatedAt),
+      };
+
+      // Convert endDate if it exists (for period bookings)
+      if (bookingData.endDate) {
+        firestoreData.endDate = Timestamp.fromDate(bookingData.endDate);
+      }
+
+      const docRef = await addDoc(collection(db, 'bookings'), firestoreData);
+
+      return docRef.id;
+    } catch (error) {
+      console.error('Error creating confirmed booking:', error);
       throw error;
     }
   }
@@ -303,6 +359,31 @@ export class BookingService {
       });
     } catch (error) {
       console.error('Error updating booking status:', error);
+      throw error;
+    }
+  }
+
+  static async getBookingById(bookingId: string): Promise<Booking | null> {
+    try {
+      const bookingRef = doc(db, 'bookings', bookingId);
+      const bookingDoc = await getDoc(bookingRef);
+      
+      if (!bookingDoc.exists()) {
+        return null;
+      }
+
+      const data = bookingDoc.data();
+      return {
+        id: bookingDoc.id,
+        ...data,
+        bookingDate: data.bookingDate?.toDate(),
+        rideDate: data.rideDate?.toDate(),
+        endDate: data.endDate?.toDate(),
+        createdAt: data.createdAt?.toDate(),
+        updatedAt: data.updatedAt?.toDate(),
+      } as Booking;
+    } catch (error) {
+      console.error('Error getting booking by ID:', error);
       throw error;
     }
   }

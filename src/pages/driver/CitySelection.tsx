@@ -76,9 +76,28 @@ const CitySelection = () => {
                 <SelectTrigger className="w-full border-orange-200 focus:border-orange-400 focus:ring-orange-200">
                   <SelectValue placeholder="Choose your city" />
                 </SelectTrigger>
-                <SelectContent className="bg-background border-orange-200 z-50">
+                <SelectContent 
+                  className="bg-white border-orange-200 z-50 max-h-60 overflow-y-auto shadow-lg"
+                  style={{ backgroundColor: 'white' }}
+                >
                   {cities.map((city) => (
-                    <SelectItem key={city} value={city} className="hover:bg-orange-50 focus:bg-orange-50">
+                    <SelectItem 
+                      key={city} 
+                      value={city} 
+                      className="text-gray-900 hover:bg-orange-50 focus:bg-orange-100 hover:text-gray-900 focus:text-gray-900 cursor-pointer data-[highlighted]:bg-orange-100 data-[highlighted]:text-gray-900"
+                      style={{ 
+                        color: '#111827',
+                        backgroundColor: 'white'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.backgroundColor = '#fff7ed';
+                        e.currentTarget.style.color = '#111827';
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.backgroundColor = 'white';
+                        e.currentTarget.style.color = '#111827';
+                      }}
+                    >
                       {city}
                     </SelectItem>
                   ))}

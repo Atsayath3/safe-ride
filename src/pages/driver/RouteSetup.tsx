@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
@@ -35,7 +34,7 @@ const RouteSetup = () => {
   const [endPoint, setEndPoint] = useState<MapPoint | null>(
     userProfile?.routes?.endPoint || null
   );
-  const [routeQuality, setRouteQuality] = useState<'excellent' | 'good' | 'fair'>('good');
+
 
   const handleRouteSet = (start: MapPoint, end: MapPoint) => {
     setStartPoint(start);
@@ -57,17 +56,17 @@ const RouteSetup = () => {
       const routes = {
         startPoint: startPoint,
         endPoint: endPoint,
-        quality: routeQuality
+        createdAt: new Date().toISOString()
       };
 
       await updateUserProfile({ routes });
       
       toast({
         title: "Success",
-        description: "Route saved successfully"
+        description: "Route setup completed! Your driver profile is now complete."
       });
       
-      navigate('/driver/dashboard');
+      navigate('/driver/welcome');
     } catch (error: any) {
       toast({
         title: "Error",
@@ -83,15 +82,16 @@ const RouteSetup = () => {
     <MobileLayout 
       title="Set Your Route" 
       showBack={true}
+      onBack={() => navigate('/driver/vehicle-setup')}
       theme="driver"
     >
       <div className="p-4 space-y-6 min-h-screen">
         {/* Google Maps Integration */}
         <Card className="border-orange-200 shadow-lg bg-white">
           <CardHeader className="bg-gradient-to-r from-orange-50 to-white rounded-t-lg">
-            <CardTitle className="text-lg text-orange-900">Google Maps Setup</CardTitle>
+            <CardTitle className="text-lg text-orange-900">Define Your Primary Route</CardTitle>
             <p className="text-sm text-orange-600">
-              Click on the map to set your pickup and drop-off points
+              Click on the map to set your pickup and drop-off points for your main driving route
             </p>
           </CardHeader>
           <CardContent>
@@ -104,54 +104,40 @@ const RouteSetup = () => {
           </CardContent>
         </Card>
 
-        {/* Route Quality Selection */}
-        <Card className="border-orange-200 shadow-lg bg-white">
-          <CardHeader className="bg-gradient-to-r from-orange-50 to-white rounded-t-lg">
-            <CardTitle className="text-lg text-orange-900">Route Quality</CardTitle>
-            <p className="text-sm text-orange-600">
-              Rate your route's convenience and accessibility
-            </p>
-          </CardHeader>
-          <CardContent className="pt-4">
-            <div className="space-y-2">
-              <Label className="text-orange-800">Quality Rating</Label>
-              <Select value={routeQuality} onValueChange={(value: 'excellent' | 'good' | 'fair') => 
-                setRouteQuality(value)}>
-                <SelectTrigger className="border-orange-200 focus:border-orange-400">
-                  <SelectValue placeholder="Select route quality" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="excellent">
-                    <div className="flex flex-col">
-                      <span className="font-medium">Excellent</span>
-                      <span className="text-xs text-muted-foreground">Direct route, easy access, minimal traffic</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="good">
-                    <div className="flex flex-col">
-                      <span className="font-medium">Good</span>
-                      <span className="text-xs text-muted-foreground">Mostly direct, some detours, moderate traffic</span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="fair">
-                    <div className="flex flex-col">
-                      <span className="font-medium">Fair</span>
-                      <span className="text-xs text-muted-foreground">Longer route, multiple detours, heavy traffic</span>
-                    </div>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Helpful information for new drivers */}
+        <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+          <h4 className="font-medium text-blue-900 mb-2">� How Route Matching Works:</h4>
+          <ul className="text-sm text-blue-800 space-y-1">
+            <li>• Set your regular driving route (start and end points)</li>
+            <li>• System automatically matches you with children whose pickup/school locations align with your route</li>
+            <li>• <strong>Excellent:</strong> Child's locations are very close to your route (&lt;2km)</li>
+            <li>• <strong>Good:</strong> Child's locations are reasonably close to your route (2-5km)</li>
+            <li>• <strong>Fair:</strong> Child's locations require some detour (5-10km)</li>
+            <li>• Routes that don't match well (&gt;10km) won't be shown to parents</li>
+          </ul>
+        </div>
 
         <div className="space-y-3">
+          {/* Comprehensive helpful information for new drivers */}
+          <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+            <h4 className="font-medium text-blue-900 mb-2">� How Route Matching Works:</h4>
+            <ul className="text-sm text-blue-800 space-y-1">
+              <li>• Set your regular driving route (start and end points)</li>
+              <li>• System automatically matches you with children whose pickup/school locations align with your route</li>
+              <li>• <strong>Excellent:</strong> Child's locations are very close to your route (&lt;2km)</li>
+              <li>• <strong>Good:</strong> Child's locations are reasonably close to your route (2-5km)</li>
+              <li>• <strong>Fair:</strong> Child's locations require some detour (5-10km)</li>
+              <li>• Routes that don't match well (&gt;10km) won't be shown to parents</li>
+              <li>• You can add multiple routes later from your dashboard for better coverage</li>
+            </ul>
+          </div>
+          
           <Button 
             onClick={handleSaveRoute}
             disabled={loading || !startPoint || !endPoint}
             className="w-full bg-orange-600 hover:bg-orange-700 text-white shadow-md rounded-xl" 
           >
-            {loading ? 'Saving Route...' : 'Save Route'}
+            {loading ? 'Completing Setup...' : 'Complete Profile Setup'}
           </Button>
           
           {userProfile?.status !== 'approved' && (

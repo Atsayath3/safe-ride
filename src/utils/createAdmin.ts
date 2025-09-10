@@ -58,7 +58,7 @@ export const createAdminUser = async (email: string, password: string, firstName
  * 
  * 1. Go to Firebase Console > Authentication > Users
  * 2. Click "Add user"
- * 3. Enter email: admin@saferweb.com (or your preferred admin email)
+ * 3. Enter email: admin@saferide.com (or your preferred admin email)
  * 4. Enter a secure password
  * 5. Click "Add user"
  * 6. Copy the generated UID
@@ -67,7 +67,7 @@ export const createAdminUser = async (email: string, password: string, firstName
  * 8. Click "Add document"
  * 9. Document ID: [paste the UID from step 6]
  * 10. Add fields:
- *     - email (string): admin@saferweb.com
+ *     - email (string): admin@saferide.com
  *     - role (string): admin
  *     - firstName (string): Admin
  *     - lastName (string): User

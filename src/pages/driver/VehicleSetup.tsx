@@ -52,7 +52,7 @@ const VehicleSetup = () => {
         type: vehicleData.type as 'van' | 'mini van' | 'school bus'
       };
       await updateUserProfile({ vehicle: vehicleProfile });
-      navigate('/driver/welcome');
+      navigate('/driver/route-setup');
     } catch (error: any) {
       toast({
         title: "Error",

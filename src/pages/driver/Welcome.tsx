@@ -31,6 +31,7 @@ const DriverWelcome = () => {
 
   const uploadedCount = documents.filter(doc => getDocumentStatus(doc.field)).length;
   const allUploaded = uploadedCount === documents.length;
+  const profileComplete = userProfile?.profileComplete;
 
   return (
     <MobileLayout title="Welcome Driver" theme="driver">
@@ -130,21 +131,25 @@ const DriverWelcome = () => {
               }`}></div>
               <div className="flex-1">
                 <p className={`font-bold text-base ${
-                  allUploaded ? 'text-green-900' : 'text-orange-900'
+                  profileComplete ? 'text-blue-900' : allUploaded ? 'text-green-900' : 'text-orange-900'
                 }`}>
-                  {allUploaded 
-                    ? 'Documents Complete - Ready for Verification' 
-                    : uploadedCount > 0 
-                      ? `Documents In Progress (${uploadedCount}/${documents.length})`
-                      : 'Documents Required'
+                  {profileComplete 
+                    ? 'Registration Complete - Under Admin Review' 
+                    : allUploaded 
+                      ? 'Documents Complete - Ready for Verification' 
+                      : uploadedCount > 0 
+                        ? `Documents In Progress (${uploadedCount}/${documents.length})`
+                        : 'Documents Required'
                   }
                 </p>
                 <p className={`text-sm font-medium mt-1 ${
-                  allUploaded ? 'text-green-700' : 'text-orange-700'
+                  profileComplete ? 'text-blue-700' : allUploaded ? 'text-green-700' : 'text-orange-700'
                 }`}>
-                  {allUploaded 
-                    ? 'All required documents have been uploaded. Admin review in progress.'
-                    : 'Upload all documents to start the verification process'
+                  {profileComplete 
+                    ? 'Your registration is complete and admins have been notified. You will receive an update once verified.'
+                    : allUploaded 
+                      ? 'All required documents have been uploaded. Admin review in progress.'
+                      : 'Upload all documents to start the verification process'
                   }
                 </p>
               </div>
@@ -155,14 +160,14 @@ const DriverWelcome = () => {
               <div className="w-full bg-gray-300 rounded-full h-3">
                 <div 
                   className={`h-3 rounded-full transition-all duration-500 ${
-                    allUploaded ? 'bg-green-500' : 'bg-orange-500'
+                    profileComplete ? 'bg-blue-500' : allUploaded ? 'bg-green-500' : 'bg-orange-500'
                   }`}
-                  style={{ width: `${(uploadedCount / documents.length) * 100}%` }}
+                  style={{ width: `${profileComplete ? 100 : (uploadedCount / documents.length) * 100}%` }}
                 ></div>
               </div>
               <div className="flex justify-between text-sm font-semibold text-gray-700 mt-2">
-                <span>Progress</span>
-                <span>{Math.round((uploadedCount / documents.length) * 100)}%</span>
+                <span>{profileComplete ? 'Complete' : 'Progress'}</span>
+                <span>{profileComplete ? '100%' : Math.round((uploadedCount / documents.length) * 100)}%</span>
               </div>
             </div>
           </CardContent>

@@ -46,7 +46,10 @@ const AdminLogin = () => {
           errorMessage = 'No admin account found with this email';
           break;
         case 'auth/wrong-password':
-          errorMessage = 'Incorrect password';
+          errorMessage = 'Invalid credentials. Try again!';
+          break;
+        case 'auth/invalid-credential':
+          errorMessage = 'Invalid credentials. Try again!';
           break;
         case 'auth/invalid-email':
           errorMessage = 'Invalid email address';
@@ -103,7 +106,7 @@ const AdminLogin = () => {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="admin@saferweb.com"
+                  placeholder="admin@saferide.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   className="h-12"

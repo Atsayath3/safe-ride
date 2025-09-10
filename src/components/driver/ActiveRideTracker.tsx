@@ -9,10 +9,13 @@ import {
   CheckCircle, 
   XCircle, 
   AlertCircle,
-  Navigation
+  Navigation,
+  Phone
 } from 'lucide-react';
 import { ActiveRide, RideChild } from '@/interfaces/ride';
 import { RideService } from '@/services/rideService';
+import { BookingService } from '@/services/bookingService';
+import { notificationService } from '@/services/notificationService';
 import { toast } from '@/hooks/use-toast';
 import LocationTrackingControl from './LocationTrackingControl';
 
@@ -23,6 +26,7 @@ interface ActiveRideTrackerProps {
 
 const ActiveRideTracker: React.FC<ActiveRideTrackerProps> = ({ ride, onRideUpdate }) => {
   const [updatingChild, setUpdatingChild] = useState<string | null>(null);
+  const [sosLoading, setSosLoading] = useState(false);
 
   // Helper function to convert Firestore Timestamp or Date to Date object
   const toDate = (timestamp: any): Date => {
@@ -76,6 +80,78 @@ const ActiveRideTracker: React.FC<ActiveRideTrackerProps> = ({ ride, onRideUpdat
     }
   };
 
+  const handleEmergencySOS = async () => {
+    setSosLoading(true);
+    
+    try {
+      // Get current location if available
+      let currentLocation: { lat: number; lng: number; address?: string } | undefined;
+      
+      if (navigator.geolocation) {
+        try {
+          const position = await new Promise<GeolocationPosition>((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, {
+              timeout: 5000,
+              enableHighAccuracy: true
+            });
+          });
+          
+          currentLocation = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+            address: `${position.coords.latitude}, ${position.coords.longitude}`
+          };
+        } catch (geoError) {
+          console.warn('Could not get current location:', geoError);
+        }
+      }
+
+      // Get all parent IDs from the ride bookings
+      const parentIds: string[] = [];
+      const driverName = 'Driver'; // This should be fetched from driver profile
+      
+      for (const child of ride.children) {
+        try {
+          const booking = await BookingService.getBookingById(child.bookingId);
+          if (booking && !parentIds.includes(booking.parentId)) {
+            parentIds.push(booking.parentId);
+          }
+        } catch (error) {
+          console.error(`Error fetching booking for child ${child.childId}:`, error);
+        }
+      }
+
+      if (parentIds.length === 0) {
+        throw new Error('No parent contacts found for emergency alert');
+      }
+
+      // Send emergency SOS alerts
+      await notificationService.sendEmergencySOSAlert(
+        ride.id,
+        ride.driverId,
+        parentIds,
+        driverName,
+        currentLocation
+      );
+
+      toast({
+        title: "🚨 Emergency SOS Sent",
+        description: `Emergency alert sent to ${parentIds.length} parent(s) and emergency services.`,
+        variant: "destructive"
+      });
+
+    } catch (error: any) {
+      console.error('Error sending emergency SOS:', error);
+      toast({
+        title: "Error",
+        description: error.message || "Failed to send emergency alert",
+        variant: "destructive"
+      });
+    } finally {
+      setSosLoading(false);
+    }
+  };
+
   const handleStatusUpdate = async (childId: string, status: 'picked_up' | 'absent' | 'dropped_off') => {
     setUpdatingChild(childId);
     
@@ -115,6 +191,27 @@ const ActiveRideTracker: React.FC<ActiveRideTrackerProps> = ({ ride, onRideUpdat
 
       onRideUpdate(updatedRide);
 
+      // Send attendance notification to parent
+      try {
+        const child = updatedChildren.find(c => c.childId === childId);
+        if (child && (status === 'picked_up' || status === 'absent')) {
+          // Get parent ID from booking
+          const booking = await BookingService.getBookingById(child.bookingId);
+          if (booking) {
+            await notificationService.sendAttendanceNotification(
+              booking.parentId,
+              ride.driverId,
+              child.childId,
+              child.fullName,
+              status === 'picked_up' ? 'present' : 'absent'
+            );
+          }
+        }
+      } catch (notificationError) {
+        console.error('Error sending attendance notification:', notificationError);
+        // Don't fail the status update if notification fails
+      }
+
       const statusText = status === 'picked_up' ? 'picked up' : 
                        status === 'dropped_off' ? 'dropped off' : 'absent';
       
@@ -124,9 +221,36 @@ const ActiveRideTracker: React.FC<ActiveRideTrackerProps> = ({ ride, onRideUpdat
       });
 
       if (allProcessed) {
+        // Send trip end notifications to all parents
+        try {
+          const parentNotifications = [];
+          for (const child of updatedChildren) {
+            try {
+              const booking = await BookingService.getBookingById(child.bookingId);
+              if (booking) {
+                parentNotifications.push(
+                  notificationService.sendTripEndNotification(
+                    booking.parentId,
+                    ride.driverId,
+                    ride.id,
+                    'School Route', // You might want to get actual route name
+                    child.fullName
+                  )
+                );
+              }
+            } catch (error) {
+              console.error(`Error getting booking for child ${child.childId}:`, error);
+            }
+          }
+          
+          await Promise.all(parentNotifications);
+        } catch (notificationError) {
+          console.error('Error sending trip completion notifications:', notificationError);
+        }
+
         toast({
           title: "Ride Completed!",
-          description: `All ${updatedChildren.length} children processed. Great job!`,
+          description: `All ${updatedChildren.length} children processed. Parents have been notified!`,
         });
       }
 
@@ -190,9 +314,22 @@ const ActiveRideTracker: React.FC<ActiveRideTrackerProps> = ({ ride, onRideUpdat
             <CardTitle className="text-orange-900 text-lg">
               {ride.status === 'completed' ? '🎉 Ride Completed!' : '🚐 Active Ride'}
             </CardTitle>
-            <Badge className="bg-orange-100 text-orange-800 border-orange-300">
-              {ride.status === 'completed' ? 'Completed' : 'In Progress'}
-            </Badge>
+            <div className="flex items-center gap-2">
+              {ride.status === 'in_progress' && (
+                <Button
+                  onClick={handleEmergencySOS}
+                  disabled={sosLoading}
+                  className="bg-red-600 hover:bg-red-700 text-white font-semibold"
+                  size="sm"
+                >
+                  <Phone className="h-4 w-4 mr-1" />
+                  {sosLoading ? 'Sending...' : 'Emergency SOS'}
+                </Button>
+              )}
+              <Badge className="bg-orange-100 text-orange-800 border-orange-300">
+                {ride.status === 'completed' ? 'Completed' : 'In Progress'}
+              </Badge>
+            </div>
           </div>
         </CardHeader>
         <CardContent>

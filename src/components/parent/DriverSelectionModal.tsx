@@ -10,6 +10,14 @@ import { Child } from '@/pages/parent/ParentDashboard';
 import { BookingService } from '@/services/bookingService';
 import { DriverAvailability } from '@/interfaces/booking';
 import DriverFilter, { DriverFilterOptions } from './DriverFilter';
+import RouteQualityWarningModal from './RouteQualityWarningModal';
+
+interface DriverSelectionModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  child: Child;
+  onDriverSelect: (driver: UserProfile) => void;
+}
 
 interface DriverSelectionModalProps {
   isOpen: boolean;
@@ -35,6 +43,10 @@ const DriverSelectionModal: React.FC<DriverSelectionModalProps> = ({
     minAvailableSeats: null,
     vehicleType: null
   });
+  
+  // Route quality warning modal state
+  const [showRouteWarning, setShowRouteWarning] = useState(false);
+  const [selectedDriverForWarning, setSelectedDriverForWarning] = useState<UserProfile | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -48,16 +60,20 @@ const DriverSelectionModal: React.FC<DriverSelectionModalProps> = ({
 
   const applyFilters = () => {
     let filtered = [...allDrivers];
+    console.log('🔍 Applying filters to', allDrivers.length, 'drivers');
 
-    // First, exclude drivers with Poor or Unknown routes
+    // Only exclude drivers with Poor routes (keep Unknown and others)
     filtered = filtered.filter(driver => {
       const compatibility = getRouteCompatibility(driver);
-      return compatibility !== 'Poor' && compatibility !== 'Unknown';
+      console.log(`🗺️ ${driver.firstName} route compatibility: ${compatibility}`);
+      return compatibility !== 'Poor';
     });
+    console.log('📍 After route filter:', filtered.length, 'drivers remaining');
 
     // Gender filter
     if (filters.gender) {
       filtered = filtered.filter(driver => driver.gender === filters.gender);
+      console.log('👤 After gender filter:', filtered.length, 'drivers remaining');
     }
 
     // Route quality filter
@@ -66,6 +82,7 @@ const DriverSelectionModal: React.FC<DriverSelectionModalProps> = ({
         const compatibility = getRouteCompatibility(driver);
         return compatibility.toLowerCase() === filters.routeQuality;
       });
+      console.log('🛣️ After route quality filter:', filtered.length, 'drivers remaining');
     }
 
     // Available seats filter
@@ -74,13 +91,16 @@ const DriverSelectionModal: React.FC<DriverSelectionModalProps> = ({
         const availability = driverAvailability[driver.uid];
         return availability && availability.availableSeats >= (filters.minAvailableSeats || 0);
       });
+      console.log('🪑 After seats filter:', filtered.length, 'drivers remaining');
     }
 
     // Vehicle type filter
     if (filters.vehicleType) {
       filtered = filtered.filter(driver => driver.vehicle?.type === filters.vehicleType);
+      console.log('🚗 After vehicle type filter:', filtered.length, 'drivers remaining');
     }
 
+    console.log('✅ Final filtered drivers:', filtered.length);
     setFilteredDrivers(filtered);
   };
 
@@ -96,23 +116,28 @@ const DriverSelectionModal: React.FC<DriverSelectionModalProps> = ({
   const loadAvailableDrivers = async () => {
     setLoading(true);
     try {
+      console.log('🔍 Loading drivers for child:', child.fullName);
       const childLocation = {
         pickup: { lat: child.tripStartLocation.lat, lng: child.tripStartLocation.lng },
         school: { lat: child.schoolLocation.lat, lng: child.schoolLocation.lng }
       };
+      console.log('📍 Child locations:', childLocation);
       
       const availableDrivers = await BookingService.getAvailableDrivers(childLocation);
+      console.log('✅ Available drivers from service:', availableDrivers.length);
       setAllDrivers(availableDrivers);
 
       // Load availability for each driver
       const availabilityData: Record<string, DriverAvailability> = {};
       for (const driver of availableDrivers) {
+        console.log(`🪑 Loading availability for ${driver.firstName}...`);
         const availability = await BookingService.getDriverAvailability(driver.uid);
+        console.log(`🪑 ${driver.firstName} availability:`, availability);
         availabilityData[driver.uid] = availability;
       }
       setDriverAvailability(availabilityData);
     } catch (error) {
-      console.error('Error loading drivers:', error);
+      console.error('❌ Error loading drivers:', error);
     } finally {
       setLoading(false);
     }
@@ -135,12 +160,7 @@ const DriverSelectionModal: React.FC<DriverSelectionModalProps> = ({
   };
 
   const getRouteCompatibility = (driver: UserProfile) => {
-    // First check if driver has a manual route quality set
-    if (driver.routes?.quality) {
-      return driver.routes.quality.charAt(0).toUpperCase() + driver.routes.quality.slice(1);
-    }
-
-    // Fallback to distance-based calculation if no manual quality is set
+    // Calculate route quality based on distance between routes
     if (!driver.routes?.startPoint || !driver.routes?.endPoint) return 'Unknown';
     
     const pickupDistance = calculateDistance(child.tripStartLocation, driver.routes.startPoint);
@@ -152,6 +172,39 @@ const DriverSelectionModal: React.FC<DriverSelectionModalProps> = ({
     if (totalDistance < 5) return 'Good';
     if (totalDistance < 10) return 'Fair';
     return 'Poor';
+  };
+
+  const handleDriverSelection = (driver: UserProfile) => {
+    const routeQuality = getRouteCompatibility(driver);
+    
+    // If route is excellent, proceed directly
+    if (routeQuality.toLowerCase() === 'excellent') {
+      onDriverSelect(driver);
+      return;
+    }
+    
+    // If route is good or fair, show warning modal
+    if (routeQuality.toLowerCase() === 'good' || routeQuality.toLowerCase() === 'fair') {
+      setSelectedDriverForWarning(driver);
+      setShowRouteWarning(true);
+      return;
+    }
+    
+    // Poor or unknown routes should not reach here due to filtering, but handle just in case
+    onDriverSelect(driver);
+  };
+
+  const handleRouteWarningContinue = () => {
+    if (selectedDriverForWarning) {
+      setShowRouteWarning(false);
+      onDriverSelect(selectedDriverForWarning);
+      setSelectedDriverForWarning(null);
+    }
+  };
+
+  const handleRouteWarningClose = () => {
+    setShowRouteWarning(false);
+    setSelectedDriverForWarning(null);
   };
 
   return (
@@ -291,7 +344,7 @@ const DriverSelectionModal: React.FC<DriverSelectionModalProps> = ({
                         
                         <div className="flex items-center gap-2 pt-2">
                           <Button 
-                            onClick={() => onDriverSelect(driver)}
+                            onClick={() => handleDriverSelection(driver)}
                             className="flex-1"
                             disabled={!availability || availability.availableSeats === 0}
                           >
@@ -307,6 +360,18 @@ const DriverSelectionModal: React.FC<DriverSelectionModalProps> = ({
           </div>
         )}
       </SheetContent>
+      
+      {/* Route Quality Warning Modal */}
+      {selectedDriverForWarning && (
+        <RouteQualityWarningModal
+          isOpen={showRouteWarning}
+          onClose={handleRouteWarningClose}
+          onContinue={handleRouteWarningContinue}
+          driver={selectedDriverForWarning}
+          child={child}
+          routeQuality={getRouteCompatibility(selectedDriverForWarning)}
+        />
+      )}
     </Sheet>
   );
 };

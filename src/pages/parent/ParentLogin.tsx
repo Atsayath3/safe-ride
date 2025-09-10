@@ -79,7 +79,10 @@ const ParentLogin = () => {
           errorMessage = 'No parent account found with this email. Please sign up first.';
           break;
         case 'auth/wrong-password':
-          errorMessage = 'Incorrect password. Please try again.';
+          errorMessage = 'Invalid credentials. Try again!';
+          break;
+        case 'auth/invalid-credential':
+          errorMessage = 'Invalid credentials. Try again!';
           break;
         case 'auth/invalid-email':
           errorMessage = 'Invalid email address format.';
