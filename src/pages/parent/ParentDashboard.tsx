@@ -8,6 +8,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import MobileLayout from '@/components/mobile/MobileLayout';
 import ChildCard from '@/components/parent/ChildCard';
+import EnhancedChildCard from '@/components/parent/EnhancedChildCard';
+import { BookingManagementService } from '@/services/bookingManagementService';
 import ChildOptionsModal from '@/components/parent/ChildOptionsModal';
 import DeleteChildConfirmation from '@/components/parent/DeleteChildConfirmation';
 import DriverSelectionModal from '@/components/parent/DriverSelectionModal';
@@ -101,10 +103,41 @@ const ParentDashboard = () => {
     setSelectedChild(null);
   };
 
-  const handleBookRide = () => {
+  const handleBookRide = async () => {
     if (!selectedChild) return;
+    
+    // Check if child already has an active booking
+    const hasActiveBooking = await BookingManagementService.hasActiveBooking(selectedChild.id);
+    
+    if (hasActiveBooking) {
+      toast({
+        title: "Active Booking Found",
+        description: `${selectedChild.fullName} already has an active booking. You can extend it instead of creating a new one.`,
+        variant: "destructive",
+      });
+      setShowOptionsModal(false);
+      return;
+    }
+    
     setShowDriverSelection(true);
     setShowOptionsModal(false);
+  };
+
+  const handleBookNewRide = async (child: Child) => {
+    // Check if child already has an active booking
+    const hasActiveBooking = await BookingManagementService.hasActiveBooking(child.id);
+    
+    if (hasActiveBooking) {
+      toast({
+        title: "Active Booking Found",
+        description: `${child.fullName} already has an active booking. You can extend it instead of creating a new one.`,
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setSelectedChild(child);
+    setShowDriverSelection(true);
   };
 
   const handleViewPastRides = () => {
@@ -245,10 +278,34 @@ const ParentDashboard = () => {
                 {children.length > 0 ? (
                   <div className="grid gap-4">
                     {children.map((child) => (
-                      <ChildCard 
+                      <EnhancedChildCard 
                         key={child.id} 
                         child={child} 
-                        onClick={() => handleChildCardClick(child)}
+                        onBookNewRide={() => handleBookNewRide(child)}
+                        onRefresh={() => {
+                          // Refresh function for real-time updates
+                          const fetchChildren = async () => {
+                            if (!currentUser) return;
+                            const q = query(collection(db, 'children'), where('parentId', '==', currentUser.uid));
+                            const querySnapshot = await getDocs(q);
+                            const childrenList: Child[] = querySnapshot.docs.map(docSnap => {
+                              const data = docSnap.data();
+                              return {
+                                id: docSnap.id,
+                                fullName: data.fullName,
+                                dateOfBirth: data.dateOfBirth?.toDate ? data.dateOfBirth.toDate() : data.dateOfBirth,
+                                gender: data.gender,
+                                schoolName: data.schoolName,
+                                schoolLocation: data.schoolLocation,
+                                tripStartLocation: data.pickupLocation || data.tripStartLocation,
+                                studentId: data.studentId,
+                                avatar: data.avatar || undefined,
+                              };
+                            });
+                            setChildren(childrenList);
+                          };
+                          fetchChildren();
+                        }}
                       />
                     ))}
                   </div>
