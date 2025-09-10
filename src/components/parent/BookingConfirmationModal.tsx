@@ -12,7 +12,9 @@ import { Child } from '@/pages/parent/ParentDashboard';
 import { BookingService } from '@/services/bookingService';
 import { PricingService, PricingCalculation } from '@/services/pricingService';
 import { ComprehensivePaymentService } from '@/services/comprehensivePaymentService';
-import { PaymentTransactionRecord, PaymentCalculation } from '@/interfaces/payment';
+import { PaymentCalculation } from '@/interfaces/payment';
+import PaymentDetailsModal from './PaymentDetailsModal';
+import PaymentGatewayModal from './PaymentGatewayModal';
 import { toast } from '@/hooks/use-toast';
 
 interface BookingConfirmationModalProps {
@@ -38,6 +40,11 @@ const BookingConfirmationModal: React.FC<BookingConfirmationModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [pricingCalculation, setPricingCalculation] = useState<PricingCalculation | null>(null);
   const [paymentCalculation, setPaymentCalculation] = useState<PaymentCalculation | null>(null);
+  
+  // Modal states for the new flow
+  const [showPaymentDetails, setShowPaymentDetails] = useState(false);
+  const [showPaymentGateway, setShowPaymentGateway] = useState(false);
+  const [pendingBookingData, setPendingBookingData] = useState<any>(null);
 
   // Calculate pricing when dates change
   useEffect(() => {
@@ -114,117 +121,119 @@ const BookingConfirmationModal: React.FC<BookingConfirmationModalProps> = ({
       return;
     }
 
+    // Calculate the number of school days
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    let schoolDays = 0;
+    
+    for (let currentDate = new Date(start); currentDate <= end; currentDate.setDate(currentDate.getDate() + 1)) {
+      // Count only weekdays (Monday to Friday)
+      if (currentDate.getDay() !== 0 && currentDate.getDay() !== 6) {
+        schoolDays++;
+      }
+    }
+    
+    // Prepare booking data
+    const bookingData = {
+      parentId: userProfile.uid,
+      driverId: driver.uid,
+      childId: child.id,
+      pickupLocation: child.tripStartLocation,
+      dropoffLocation: child.schoolLocation,
+      rideDate: start,
+      endDate: end,
+      isRecurring: true,
+      recurringDays: schoolDays,
+      dailyTime: rideTime,
+      notes: notes.trim() || undefined,
+      totalPrice: pricingCalculation?.totalPrice,
+      distance: pricingCalculation?.totalDistance,
+      pricePerKm: 25,
+      driverAvailability: pricingCalculation?.driverAvailability
+    };
+
+    setPendingBookingData(bookingData);
+    
+    // Show payment details modal first
+    setShowPaymentDetails(true);
+  };
+
+  const handleContinueToPayment = (paymentType: 'upfront' | 'balance') => {
+    setShowPaymentDetails(false);
+    setShowPaymentGateway(true);
+  };
+
+  const handlePaymentSuccess = async (transactionId: string) => {
+    if (!pendingBookingData || !paymentCalculation) {
+      toast({
+        title: "Error",
+        description: "Missing booking data",
+        variant: "destructive"
+      });
+      return;
+    }
+
     try {
       setLoading(true);
 
-      // Calculate the number of school days
-      const start = new Date(startDate);
-      const end = new Date(endDate);
-      let schoolDays = 0;
-      
-      for (let currentDate = new Date(start); currentDate <= end; currentDate.setDate(currentDate.getDate() + 1)) {
-        // Count only weekdays (Monday to Friday)
-        if (currentDate.getDay() !== 0 && currentDate.getDay() !== 6) {
-          schoolDays++;
-        }
-      }
-      
-      // Create the booking request
-      const bookingRequest = {
-        parentId: userProfile.uid,
-        driverId: driver.uid,
-        childId: child.id,
-        pickupLocation: child.tripStartLocation,
-        dropoffLocation: child.schoolLocation,
-        rideDate: start, // Start date of the period
-        endDate: end,    // End date of the period
-        isRecurring: true,
-        recurringDays: schoolDays,
-        dailyTime: rideTime,
-        notes: notes.trim() || undefined,
-        // Include pricing information
-        totalPrice: pricingCalculation?.totalPrice,
-        distance: pricingCalculation?.totalDistance,
-        pricePerKm: 25, // Rs.25 per km
-        driverAvailability: pricingCalculation?.driverAvailability
-      };
-
-      // Create the booking first
-      const bookingId = await BookingService.createConfirmedBooking(bookingRequest);
+      // Create the booking
+      const bookingId = await BookingService.createConfirmedBooking(pendingBookingData);
       
       // Create payment transaction record
       await ComprehensivePaymentService.createPaymentTransaction(
         bookingId,
-        userProfile.uid,
-        driver.uid,
+        pendingBookingData.parentId,
+        pendingBookingData.driverId,
         paymentCalculation.totalAmount,
-        end
+        pendingBookingData.endDate
       );
 
-      // Process upfront payment
-      const paymentRequest = {
-        bookingId,
-        amount: paymentCalculation.upfrontAmount,
-        paymentType: 'upfront' as const,
-        customerInfo: {
-          name: `${userProfile.firstName} ${userProfile.lastName}`,
-          email: userProfile.email,
-          phone: userProfile.phone || ''
-        }
-      };
+      // Process the upfront payment
+      const paymentTransaction = await ComprehensivePaymentService.getPaymentByBookingId(bookingId);
+      if (paymentTransaction) {
+        await ComprehensivePaymentService.processUpfrontPayment(
+          paymentTransaction.id!,
+          paymentCalculation.upfrontAmount,
+          transactionId
+        );
+      }
 
-      const paymentResponse = await ComprehensivePaymentService.processPayment(paymentRequest);
-      
-      if (paymentResponse.success) {
-        // Get payment transaction record
-        const paymentTransaction = await ComprehensivePaymentService.getPaymentByBookingId(bookingId);
-        
-        if (paymentTransaction) {
-          // Process the upfront payment
-          await ComprehensivePaymentService.processUpfrontPayment(
-            paymentTransaction.id!,
-            paymentCalculation.upfrontAmount,
-            paymentResponse.transactionId!
-          );
-        }
+      toast({
+        title: "Booking Confirmed!",
+        description: `${pendingBookingData.recurringDays} school day${pendingBookingData.recurringDays > 1 ? 's' : ''} booked successfully! Initial payment of ${ComprehensivePaymentService.formatPrice(paymentCalculation.upfrontAmount)} completed.`,
+      });
 
+      if (paymentCalculation.balanceAmount > 0) {
         toast({
-          title: "Booking Confirmed!",
-          description: `${schoolDays} school day${schoolDays > 1 ? 's' : ''} booked successfully! Upfront payment of ${ComprehensivePaymentService.formatPrice(paymentCalculation.upfrontAmount)} completed.`,
-        });
-
-        // Show remaining balance info
-        if (paymentCalculation.balanceAmount > 0) {
-          toast({
-            title: "Balance Payment Due",
-            description: `Remaining balance of ${ComprehensivePaymentService.formatPrice(paymentCalculation.balanceAmount)} must be paid by ${paymentCalculation.balanceDueDate.toLocaleDateString()}`,
-          });
-        }
-        
-        // Close modal and refresh
-        onBookingComplete();
-        onClose();
-      } else {
-        // Payment failed, delete the created booking
-        // await BookingService.deleteBooking(bookingId); // Implement this if needed
-        
-        toast({
-          title: "Payment Failed",
-          description: paymentResponse.message,
-          variant: "destructive"
+          title: "Balance Payment Reminder",
+          description: `Remaining balance of ${ComprehensivePaymentService.formatPrice(paymentCalculation.balanceAmount)} must be paid by ${paymentCalculation.balanceDueDate.toLocaleDateString()}`,
         });
       }
+
+      // Close modals and refresh
+      setShowPaymentGateway(false);
+      onBookingComplete();
+      onClose();
       
     } catch (error) {
       console.error('Error creating booking:', error);
       toast({
         title: "Booking Failed",
-        description: "Failed to create booking. Please try again.",
+        description: "Failed to create booking after payment. Please contact support.",
         variant: "destructive"
       });
     } finally {
       setLoading(false);
     }
+  };
+
+  const handlePaymentFailure = (error: string) => {
+    setShowPaymentGateway(false);
+    toast({
+      title: "Payment Failed",
+      description: error,
+      variant: "destructive"
+    });
   };
 
   const getInitials = (firstName?: string, lastName?: string) => {
@@ -443,14 +452,50 @@ const BookingConfirmationModal: React.FC<BookingConfirmationModalProps> = ({
             >
               {loading 
                 ? 'Processing...' 
-                : paymentCalculation 
-                  ? `Pay ${ComprehensivePaymentService.formatPrice(paymentCalculation.upfrontAmount)} & Confirm`
-                  : 'Confirm Booking'
+                : 'Proceed to Payment'
               }
             </Button>
           </div>
         </div>
       </SheetContent>
+
+      {/* Payment Details Modal */}
+      {showPaymentDetails && paymentCalculation && pricingCalculation && (
+        <PaymentDetailsModal
+          isOpen={showPaymentDetails}
+          onClose={() => setShowPaymentDetails(false)}
+          onContinuePayment={handleContinueToPayment}
+          totalAmount={paymentCalculation.totalAmount}
+          bookingEndDate={new Date(endDate)}
+          bookingDetails={{
+            driverName: `${driver?.firstName} ${driver?.lastName}`,
+            childName: child.fullName,
+            schoolDays: pricingCalculation.numberOfDays,
+            distance: pricingCalculation.totalDistance,
+            startDate: startDate,
+            endDate: endDate
+          }}
+          paymentType="upfront"
+        />
+      )}
+
+      {/* Payment Gateway Modal */}
+      {showPaymentGateway && paymentCalculation && userProfile && pendingBookingData && (
+        <PaymentGatewayModal
+          isOpen={showPaymentGateway}
+          onClose={() => setShowPaymentGateway(false)}
+          onPaymentSuccess={handlePaymentSuccess}
+          onPaymentFailure={handlePaymentFailure}
+          paymentAmount={paymentCalculation.upfrontAmount}
+          paymentType="upfront"
+          bookingId="temp-booking-id" // This will be updated after booking creation
+          customerInfo={{
+            name: `${userProfile.firstName} ${userProfile.lastName}`,
+            email: userProfile.email,
+            phone: userProfile.phone || ''
+          }}
+        />
+      )}
     </Sheet>
   );
 };
