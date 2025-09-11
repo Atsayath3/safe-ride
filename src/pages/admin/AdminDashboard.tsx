@@ -9,7 +9,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { collection, query, where, getDocs, updateDoc, doc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import MobileLayout from '@/components/mobile/MobileLayout';
+import ResponsiveLayout from '@/components/ResponsiveLayout';
 import { toast } from '@/hooks/use-toast';
 import { UserProfile } from '@/contexts/AuthContext';
 import { CheckCircle, XCircle, Clock, User, Car, FileText, Eye } from 'lucide-react';
@@ -178,28 +178,28 @@ const AdminDashboard = () => {
 
   if (loading) {
     return (
-      <MobileLayout title="Admin Dashboard">
+      <ResponsiveLayout title="Admin Dashboard">
         <div className="p-4 flex items-center justify-center min-h-[200px]">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
             <p className="text-muted-foreground">Loading...</p>
           </div>
         </div>
-      </MobileLayout>
+      </ResponsiveLayout>
     );
   }
 
   // Show loading while checking authentication
   if (!userProfile) {
     return (
-      <MobileLayout title="Admin Dashboard">
+      <ResponsiveLayout title="Admin Dashboard">
         <div className="p-4 flex items-center justify-center min-h-[400px]">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
             <p className="mt-2 text-muted-foreground">Loading...</p>
           </div>
         </div>
-      </MobileLayout>
+      </ResponsiveLayout>
     );
   }
 
@@ -209,7 +209,7 @@ const AdminDashboard = () => {
   }
 
   return (
-    <MobileLayout title="Admin Dashboard" theme="admin">
+    <ResponsiveLayout title="Admin Dashboard" theme="admin">
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
         {/* Professional Header */}
         <div className="bg-white border-b border-slate-200 shadow-sm">
@@ -840,7 +840,7 @@ const AdminDashboard = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </MobileLayout>
+    </ResponsiveLayout>
   );
 };
 

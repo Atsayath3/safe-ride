@@ -27,6 +27,56 @@ interface ActiveRideTrackerProps {
 const ActiveRideTracker: React.FC<ActiveRideTrackerProps> = ({ ride, onRideUpdate }) => {
   const [updatingChild, setUpdatingChild] = useState<string | null>(null);
   const [sosLoading, setSosLoading] = useState(false);
+  const [showEmergencyMenu, setShowEmergencyMenu] = useState(false);
+
+  // Emergency contact numbers
+  const emergencyContacts = [
+    {
+      name: 'Police',
+      number: '+94740464232',
+      icon: '🚔',
+      color: 'bg-blue-600 hover:bg-blue-700'
+    },
+    {
+      name: 'Ambulance',
+      number: '+94761145043',
+      icon: '🚑',
+      color: 'bg-red-600 hover:bg-red-700'
+    },
+    {
+      name: 'Safety Team',
+      number: '+94766942026',
+      icon: '🛡️',
+      color: 'bg-green-600 hover:bg-green-700'
+    }
+  ];
+
+  // Handle emergency contact selection
+  const handleEmergencyContact = (contact: { name: string; number: string; icon: string }) => {
+    try {
+      // Open phone dialer with the emergency number
+      window.location.href = `tel:${contact.number}`;
+      
+      // Show confirmation toast
+      toast({
+        title: `${contact.icon} Calling ${contact.name}`,
+        description: `Opening dialer for ${contact.number}`,
+      });
+      
+      // Close the menu
+      setShowEmergencyMenu(false);
+      
+      // Optional: Also send notification to parents about emergency call
+      handleEmergencySOS(contact.name);
+    } catch (error) {
+      console.error('Error opening dialer:', error);
+      toast({
+        title: "Error",
+        description: "Failed to open phone dialer",
+        variant: "destructive"
+      });
+    }
+  };
 
   // Helper function to convert Firestore Timestamp or Date to Date object
   const toDate = (timestamp: any): Date => {
@@ -80,8 +130,11 @@ const ActiveRideTracker: React.FC<ActiveRideTrackerProps> = ({ ride, onRideUpdat
     }
   };
 
-  const handleEmergencySOS = async () => {
+  const handleEmergencySOS = async (emergencyType?: string | React.MouseEvent) => {
     setSosLoading(true);
+    
+    // If emergencyType is a string, it's called from emergency contact selection
+    const alertType = typeof emergencyType === 'string' ? emergencyType : 'General Emergency';
     
     try {
       // Get current location if available
@@ -316,15 +369,48 @@ const ActiveRideTracker: React.FC<ActiveRideTrackerProps> = ({ ride, onRideUpdat
             </CardTitle>
             <div className="flex items-center gap-2">
               {ride.status === 'in_progress' && (
-                <Button
-                  onClick={handleEmergencySOS}
-                  disabled={sosLoading}
-                  className="bg-red-600 hover:bg-red-700 text-white font-semibold"
-                  size="sm"
-                >
-                  <Phone className="h-4 w-4 mr-1" />
-                  {sosLoading ? 'Sending...' : 'Emergency SOS'}
-                </Button>
+                <div className="relative">
+                  <Button
+                    onClick={() => setShowEmergencyMenu(!showEmergencyMenu)}
+                    disabled={sosLoading}
+                    className="bg-red-600 hover:bg-red-700 text-white font-semibold"
+                    size="sm"
+                  >
+                    <Phone className="h-4 w-4 mr-1" />
+                    {sosLoading ? 'Calling...' : 'Emergency SOS'}
+                  </Button>
+                  
+                  {/* Emergency Menu Dropdown */}
+                  {showEmergencyMenu && (
+                    <>
+                      <div 
+                        className="fixed inset-0 z-10" 
+                        onClick={() => setShowEmergencyMenu(false)}
+                      ></div>
+                      <div className="absolute right-0 top-12 z-20 bg-white border border-gray-200 rounded-lg shadow-lg py-2 min-w-[180px]">
+                        <div className="px-3 py-2 text-sm font-semibold text-gray-900 border-b border-gray-100">
+                          Select Emergency Contact
+                        </div>
+                        {emergencyContacts.map((contact) => (
+                          <button
+                            key={contact.name}
+                            onClick={() => handleEmergencyContact(contact)}
+                            className={`w-full px-3 py-3 text-left text-sm hover:bg-gray-50 flex items-center gap-3 transition-colors ${
+                              sosLoading ? 'opacity-50 cursor-not-allowed' : ''
+                            }`}
+                            disabled={sosLoading}
+                          >
+                            <span className="text-lg">{contact.icon}</span>
+                            <div>
+                              <div className="font-medium text-gray-900">{contact.name}</div>
+                              <div className="text-xs text-gray-500">{contact.number}</div>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
               )}
               <Badge className="bg-orange-100 text-orange-800 border-orange-300">
                 {ride.status === 'completed' ? 'Completed' : 'In Progress'}

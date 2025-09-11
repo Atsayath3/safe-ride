@@ -131,7 +131,7 @@ const ProfileSetup = () => {
                 </Select>
               </div>
               
-              <Button onClick={handleNameNext} className="w-full bg-orange-600 hover:bg-orange-700 text-white shadow-md">
+              <Button onClick={handleNameNext} className="w-full bg-orange-700 hover:bg-orange-800 text-white shadow-md font-semibold">
                 Continue
               </Button>
             </CardContent>

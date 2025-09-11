@@ -10,6 +10,7 @@ import MobileLayout from '@/components/mobile/MobileLayout';
 import ChildCard from '@/components/parent/ChildCard';
 import EnhancedChildCard from '@/components/parent/EnhancedChildCard';
 import { BookingManagementService } from '@/services/bookingManagementService';
+import ResponsiveLayout from '@/components/ResponsiveLayout';
 import ChildOptionsModal from '@/components/parent/ChildOptionsModal';
 import DeleteChildConfirmation from '@/components/parent/DeleteChildConfirmation';
 import DriverSelectionModal from '@/components/parent/DriverSelectionModal';
@@ -241,21 +242,16 @@ const ParentDashboard = () => {
   };
 
   return (
-    <MobileLayout
+    <ResponsiveLayout
       title={`Welcome, ${userProfile?.firstName || 'Parent'}!`}
       theme="parent"
+      userProfile={userProfile}
+      onLogout={handleLogout}
+      currentTab={currentTab}
+      onTabChange={setCurrentTab}
       rightContent={
         <div className="flex items-center gap-2">
           <NotificationBell />
-          <Button
-            onClick={handleLogout}
-            variant="outline"
-            size="sm"
-            className="rounded-xl font-medium px-3 py-2 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300"
-          >
-            <LogOut className="h-4 w-4 mr-1" />
-            Logout
-          </Button>
         </div>
       }
     >
@@ -418,7 +414,7 @@ const ParentDashboard = () => {
                     <Button
                       onClick={handleLogout}
                       variant="outline"
-                      className="w-full mt-6 border-red-200 text-red-600 hover:bg-red-50 hover:border-red-300"
+                      className="w-full mt-6 border-gray-800 text-gray-800 hover:bg-gray-100 hover:border-gray-900 font-medium"
                     >
                       <LogOut className="h-4 w-4 mr-2" />
                       Sign Out
@@ -427,36 +423,6 @@ const ParentDashboard = () => {
                 </Card>
               </TabsContent>
             </div>
-
-            {/* Bottom Navigation Tabs */}
-            <TabsList className="grid w-full grid-cols-3 bg-white border-t border-border p-2 rounded-none h-16">
-              <TabsTrigger 
-                value="home" 
-                className="flex flex-col items-center gap-1 py-2 data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600"
-              >
-                <Home className="h-5 w-5" />
-                <span className="text-xs">Home</span>
-              </TabsTrigger>
-              <TabsTrigger 
-                value="rides" 
-                className="flex flex-col items-center gap-1 py-2 data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600 relative"
-              >
-                <Car className="h-5 w-5" />
-                <span className="text-xs">Rides</span>
-                {activeRides.length > 0 && (
-                  <div className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
-                    {activeRides.length}
-                  </div>
-                )}
-              </TabsTrigger>
-              <TabsTrigger 
-                value="profile" 
-                className="flex flex-col items-center gap-1 py-2 data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600"
-              >
-                <User className="h-5 w-5" />
-                <span className="text-xs">Profile</span>
-              </TabsTrigger>
-            </TabsList>
           </Tabs>
         </div>
       </div>
@@ -502,7 +468,7 @@ const ParentDashboard = () => {
           isDeleting={isDeleting}
         />
       )}
-    </MobileLayout>
+    </ResponsiveLayout>
   );
 };
 

@@ -18,7 +18,7 @@ export interface Notification {
   id: string;
   recipientId: string;
   senderId: string;
-  type: 'attendance' | 'trip_end' | 'booking' | 'approval' | 'emergency_sos' | 'driver_verification';
+  type: 'attendance' | 'trip_end' | 'booking' | 'booking_request' | 'booking_confirmed' | 'booking_cancelled' | 'payment_received' | 'approval' | 'emergency_sos' | 'driver_verification';
   title: string;
   message: string;
   data?: any;
@@ -196,6 +196,94 @@ export class NotificationService {
       );
     } catch (error) {
       console.error('Error sending trip end notification:', error);
+      throw error;
+    }
+  }
+
+  // Send booking request notification to driver
+  static async sendBookingRequestNotification(
+    driverId: string,
+    parentId: string,
+    bookingData: {
+      bookingId: string;
+      parentName: string;
+      childName: string;
+      pickupLocation: string;
+      schoolName: string;
+      rideDate: Date;
+      totalPrice: number;
+      recurringDays?: number;
+    }
+  ): Promise<void> {
+    try {
+      console.log('📅 Sending booking request notification to driver...');
+      
+      const message = `${bookingData.parentName} has requested a ride for ${bookingData.childName} to ${bookingData.schoolName}. ${bookingData.recurringDays ? `Recurring for ${bookingData.recurringDays} days. ` : ''}Amount: Rs. ${bookingData.totalPrice.toFixed(2)}`;
+      
+      await this.sendNotification(
+        driverId,
+        parentId,
+        'booking_request',
+        '🚗 New Ride Booking Request',
+        message,
+        {
+          bookingId: bookingData.bookingId,
+          parentName: bookingData.parentName,
+          childName: bookingData.childName,
+          pickupLocation: bookingData.pickupLocation,
+          schoolName: bookingData.schoolName,
+          rideDate: bookingData.rideDate.toISOString(),
+          totalPrice: bookingData.totalPrice,
+          recurringDays: bookingData.recurringDays,
+          timestamp: new Date().toISOString(),
+          actionRequired: true
+        }
+      );
+
+      console.log(`✅ Booking request notification sent to driver ${driverId}`);
+    } catch (error) {
+      console.error('Error sending booking request notification:', error);
+      throw error;
+    }
+  }
+
+  // Send booking confirmation notification to parent
+  static async sendBookingConfirmationNotification(
+    parentId: string,
+    driverId: string,
+    bookingData: {
+      bookingId: string;
+      driverName: string;
+      childName: string;
+      rideDate: Date;
+      totalPrice: number;
+    }
+  ): Promise<void> {
+    try {
+      console.log('✅ Sending booking confirmation notification to parent...');
+      
+      const message = `Driver ${bookingData.driverName} has confirmed the ride for ${bookingData.childName} on ${bookingData.rideDate.toLocaleDateString()}. Amount: Rs. ${bookingData.totalPrice.toFixed(2)}`;
+      
+      await this.sendNotification(
+        parentId,
+        driverId,
+        'booking_confirmed',
+        '✅ Ride Booking Confirmed',
+        message,
+        {
+          bookingId: bookingData.bookingId,
+          driverName: bookingData.driverName,
+          childName: bookingData.childName,
+          rideDate: bookingData.rideDate.toISOString(),
+          totalPrice: bookingData.totalPrice,
+          timestamp: new Date().toISOString(),
+          status: 'confirmed'
+        }
+      );
+
+      console.log(`✅ Booking confirmation notification sent to parent ${parentId}`);
+    } catch (error) {
+      console.error('Error sending booking confirmation notification:', error);
       throw error;
     }
   }

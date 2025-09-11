@@ -9,16 +9,16 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-blue-600 text-white hover:bg-blue-700 focus-visible:bg-blue-700 shadow-sm",
+        default: "bg-blue-700 text-white hover:bg-blue-800 focus-visible:bg-blue-800 shadow-md font-semibold",
         destructive:
-          "bg-destructive text-destructive-foreground hover:bg-destructive/80 focus-visible:bg-destructive/70",
+          "bg-red-600 text-white hover:bg-red-700 focus-visible:bg-red-700 shadow-md font-semibold",
         outline:
-          "border border-input bg-white hover:bg-gray-50 hover:text-gray-900 focus-visible:bg-gray-50 focus-visible:text-gray-900 shadow-sm",
+          "border-2 border-gray-700 bg-white text-gray-800 hover:bg-gray-100 hover:text-gray-900 hover:border-gray-800 focus-visible:bg-gray-100 focus-visible:text-gray-900 shadow-sm font-medium",
         secondary:
-          "bg-secondary text-secondary-foreground hover:bg-secondary/70 focus-visible:bg-secondary/60",
-        ghost: "hover:bg-gray-100 hover:text-gray-900 focus-visible:bg-gray-100 focus-visible:text-gray-900",
-        link: "text-primary underline-offset-4 hover:underline focus-visible:text-primary/80",
-        hero: "bg-blue-600 text-white hover:bg-blue-700 focus-visible:bg-blue-700 text-base font-semibold px-8 py-3 shadow-md",
+          "bg-gray-700 text-white hover:bg-gray-800 focus-visible:bg-gray-800 shadow-md font-semibold",
+        ghost: "text-gray-800 hover:bg-gray-200 hover:text-gray-900 focus-visible:bg-gray-200 focus-visible:text-gray-900 font-medium",
+        link: "text-blue-700 underline-offset-4 hover:underline focus-visible:text-blue-800 font-medium hover:text-blue-800",
+        hero: "bg-blue-700 text-white hover:bg-blue-800 focus-visible:bg-blue-800 text-base font-bold px-8 py-3 shadow-lg",
       },
       size: {
         default: "h-10 px-4 py-2",

@@ -83,10 +83,10 @@ const AdminLogin = () => {
             <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <Shield className="w-8 h-8 text-red-600" />
             </div>
-            <CardTitle className="text-2xl font-bold text-foreground">
+            <CardTitle className="text-2xl font-bold text-gray-900">
               Admin Access
             </CardTitle>
-            <p className="text-muted-foreground text-sm">
+            <p className="text-gray-600 text-sm">
               Enter your admin credentials to continue
             </p>
           </CardHeader>
@@ -102,7 +102,7 @@ const AdminLogin = () => {
               )}
               
               <div className="space-y-2">
-                <Label htmlFor="email">Admin Email</Label>
+                <Label htmlFor="email" className="text-gray-800 font-medium">Admin Email</Label>
                 <Input
                   id="email"
                   type="email"
@@ -115,7 +115,7 @@ const AdminLogin = () => {
               </div>
               
               <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password" className="text-gray-800 font-medium">Password</Label>
                 <div className="relative">
                   <Input
                     id="password"
@@ -130,13 +130,13 @@ const AdminLogin = () => {
                     type="button"
                     variant="ghost"
                     size="sm"
-                    className="absolute right-0 top-0 h-12 px-3 hover:bg-transparent"
+                    className="absolute right-0 top-0 h-12 px-3 hover:bg-gray-100"
                     onClick={() => setShowPassword(!showPassword)}
                   >
                     {showPassword ? (
-                      <EyeOff className="h-4 w-4 text-muted-foreground" />
+                      <EyeOff className="h-4 w-4 text-gray-600" />
                     ) : (
-                      <Eye className="h-4 w-4 text-muted-foreground" />
+                      <Eye className="h-4 w-4 text-gray-600" />
                     )}
                   </Button>
                 </div>
@@ -145,15 +145,15 @@ const AdminLogin = () => {
               <Button
                 type="submit"
                 disabled={loading}
-                className="w-full h-12 font-semibold text-base bg-red-600 hover:bg-red-700"
+                className="w-full h-12 font-semibold text-base bg-red-700 hover:bg-red-800 text-white"
                 size="lg"
               >
                 {loading ? 'Signing in...' : 'Sign in as Admin'}
               </Button>
             </form>
             
-            <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
-              <p className="text-amber-800 text-xs text-center">
+            <div className="mt-6 p-4 bg-amber-50 border border-amber-400 rounded-lg">
+              <p className="text-amber-900 text-xs text-center font-medium">
                 ⚠️ This is a restricted area. Only authorized administrators can access this dashboard.
               </p>
             </div>

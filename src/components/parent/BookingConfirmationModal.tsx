@@ -12,6 +12,7 @@ import { Child } from '@/pages/parent/ParentDashboard';
 import { BookingService } from '@/services/bookingService';
 import { PricingService, PricingCalculation } from '@/services/pricingService';
 import { ComprehensivePaymentService } from '@/services/comprehensivePaymentService';
+import { NotificationService } from '@/services/notificationService';
 import { PaymentCalculation } from '@/interfaces/payment';
 import PaymentDetailsModal from './PaymentDetailsModal';
 import PaymentGatewayModal from './PaymentGatewayModal';
@@ -178,6 +179,28 @@ const BookingConfirmationModal: React.FC<BookingConfirmationModalProps> = ({
 
       // Create the booking
       const bookingId = await BookingService.createConfirmedBooking(pendingBookingData);
+      
+      // Send notification to driver about new booking request
+      try {
+        await NotificationService.sendBookingRequestNotification(
+          pendingBookingData.driverId,
+          pendingBookingData.parentId,
+          {
+            bookingId,
+            parentName: `${userProfile?.firstName || ''} ${userProfile?.lastName || ''}`.trim() || 'Parent',
+            childName: child?.fullName || 'Child',
+            pickupLocation: child?.tripStartLocation.address || 'Pickup Location',
+            schoolName: child?.schoolName || 'School',
+            rideDate: new Date(pendingBookingData.rideDate),
+            totalPrice: paymentCalculation.totalAmount,
+            recurringDays: pendingBookingData.recurringDays
+          }
+        );
+        console.log('✅ Driver notification sent successfully');
+      } catch (notificationError) {
+        console.error('❌ Failed to send driver notification:', notificationError);
+        // Don't fail the booking if notification fails
+      }
       
       // Create payment transaction record
       await ComprehensivePaymentService.createPaymentTransaction(

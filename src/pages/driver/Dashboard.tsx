@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import MobileLayout from '@/components/mobile/MobileLayout';
+import ResponsiveLayout from '@/components/ResponsiveLayout';
 import ActiveRideTracker from '@/components/driver/ActiveRideTracker';
 import NotificationBell from '@/components/NotificationBell';
 import { MapPin, Clock, Users, Settings, Calendar, Play, Route } from 'lucide-react';
@@ -247,7 +247,7 @@ const DriverDashboard = () => {
 
   return (
     <div className="error-boundary">
-      <MobileLayout 
+      <ResponsiveLayout 
         title="Driver Dashboard" 
         showMenu={true}
         onMenu={() => navigate('/driver/profile')}
@@ -449,7 +449,7 @@ const DriverDashboard = () => {
           </>
         )}
       </div>
-    </MobileLayout>
+    </ResponsiveLayout>
     </div>
   );
 };
