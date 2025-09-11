@@ -66,6 +66,24 @@ export class ComprehensivePaymentService {
     bookingEndDate: Date
   ): Promise<string> {
     try {
+      console.log('💳 Creating payment transaction for booking:', bookingId);
+      
+      if (!bookingId) {
+        throw new Error('Booking ID is required for payment transaction');
+      }
+      if (!parentId) {
+        throw new Error('Parent ID is required for payment transaction');
+      }
+      if (!driverId) {
+        throw new Error('Driver ID is required for payment transaction');
+      }
+      if (!totalAmount || totalAmount <= 0) {
+        throw new Error('Valid total amount is required for payment transaction');
+      }
+      if (!bookingEndDate) {
+        throw new Error('Booking end date is required for payment transaction');
+      }
+
       const calculation = this.calculatePaymentBreakdown(totalAmount, bookingEndDate);
       
       const paymentTransaction: PaymentTransactionRecord = {
@@ -88,11 +106,14 @@ export class ComprehensivePaymentService {
         updatedAt: new Date()
       };
 
+      console.log('💾 Saving payment transaction to Firestore...');
       const docRef = await addDoc(collection(db, 'payment_transactions'), paymentTransaction);
+      console.log('✅ Payment transaction created with ID:', docRef.id);
+      
       return docRef.id;
-    } catch (error) {
-      console.error('Error creating payment transaction:', error);
-      throw new Error('Failed to create payment transaction');
+    } catch (error: any) {
+      console.error('❌ Error creating payment transaction:', error);
+      throw new Error(`Payment transaction creation failed: ${error.message}`);
     }
   }
 
@@ -105,6 +126,18 @@ export class ComprehensivePaymentService {
     gatewayTransactionId: string
   ): Promise<boolean> {
     try {
+      console.log('💰 Processing upfront payment for transaction:', paymentTransactionId);
+      
+      if (!paymentTransactionId) {
+        throw new Error('Payment transaction ID is required');
+      }
+      if (!amount || amount <= 0) {
+        throw new Error('Valid payment amount is required');
+      }
+      if (!gatewayTransactionId) {
+        throw new Error('Gateway transaction ID is required');
+      }
+
       const docRef = doc(db, 'payment_transactions', paymentTransactionId);
       const paymentDoc = await getDoc(docRef);
       
@@ -238,6 +271,12 @@ export class ComprehensivePaymentService {
    */
   static async getPaymentByBookingId(bookingId: string): Promise<PaymentTransactionRecord | null> {
     try {
+      console.log('🔍 Searching for payment transaction with booking ID:', bookingId);
+      
+      if (!bookingId) {
+        throw new Error('Booking ID is required to find payment transaction');
+      }
+
       const q = query(
         collection(db, 'payment_transactions'),
         where('bookingId', '==', bookingId)
@@ -246,14 +285,16 @@ export class ComprehensivePaymentService {
       const querySnapshot = await getDocs(q);
       
       if (querySnapshot.empty) {
+        console.log('⚠️ No payment transaction found for booking ID:', bookingId);
         return null;
       }
       
       const doc = querySnapshot.docs[0];
+      console.log('✅ Payment transaction found:', doc.id);
       return { id: doc.id, ...doc.data() } as PaymentTransactionRecord;
-    } catch (error) {
-      console.error('Error getting payment by booking ID:', error);
-      return null;
+    } catch (error: any) {
+      console.error('❌ Error getting payment by booking ID:', error);
+      throw new Error(`Failed to retrieve payment transaction: ${error.message}`);
     }
   }
 

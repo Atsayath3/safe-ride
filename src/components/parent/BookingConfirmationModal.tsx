@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { MapPin, Users, Calendar, Clock, DollarSign } from 'lucide-react';
+import { MapPin, Users, Calendar, Clock, DollarSign, Phone } from 'lucide-react';
 import { UserProfile, useAuth } from '@/contexts/AuthContext';
 import { Child } from '@/pages/parent/ParentDashboard';
 import { BookingService } from '@/services/bookingService';
@@ -146,7 +146,7 @@ const BookingConfirmationModal: React.FC<BookingConfirmationModalProps> = ({
       isRecurring: true,
       recurringDays: schoolDays,
       dailyTime: rideTime,
-      notes: notes.trim() || undefined,
+      ...(notes.trim() && { notes: notes.trim() }), // Only include notes if it's not empty
       totalPrice: pricingCalculation?.totalPrice,
       distance: pricingCalculation?.totalDistance,
       pricePerKm: 25,
@@ -176,12 +176,16 @@ const BookingConfirmationModal: React.FC<BookingConfirmationModalProps> = ({
 
     try {
       setLoading(true);
+      console.log('🚀 Starting booking creation process with data:', pendingBookingData);
 
       // Create the booking
+      console.log('📝 Creating confirmed booking...');
       const bookingId = await BookingService.createConfirmedBooking(pendingBookingData);
+      console.log('✅ Booking created successfully with ID:', bookingId);
       
       // Send notification to driver about new booking request
       try {
+        console.log('📧 Sending driver notification...');
         await NotificationService.sendBookingRequestNotification(
           pendingBookingData.driverId,
           pendingBookingData.parentId,
@@ -203,23 +207,41 @@ const BookingConfirmationModal: React.FC<BookingConfirmationModalProps> = ({
       }
       
       // Create payment transaction record
-      await ComprehensivePaymentService.createPaymentTransaction(
-        bookingId,
-        pendingBookingData.parentId,
-        pendingBookingData.driverId,
-        paymentCalculation.totalAmount,
-        pendingBookingData.endDate
-      );
+      try {
+        console.log('💳 Creating payment transaction record...');
+        await ComprehensivePaymentService.createPaymentTransaction(
+          bookingId,
+          pendingBookingData.parentId,
+          pendingBookingData.driverId,
+          paymentCalculation.totalAmount,
+          pendingBookingData.endDate
+        );
+        console.log('✅ Payment transaction record created');
+      } catch (paymentTransactionError) {
+        console.error('❌ Failed to create payment transaction:', paymentTransactionError);
+        throw new Error(`Payment transaction creation failed: ${paymentTransactionError.message}`);
+      }
 
       // Process the upfront payment
-      const paymentTransaction = await ComprehensivePaymentService.getPaymentByBookingId(bookingId);
-      if (paymentTransaction) {
-        await ComprehensivePaymentService.processUpfrontPayment(
-          paymentTransaction.id!,
-          paymentCalculation.upfrontAmount,
-          transactionId
-        );
+      try {
+        console.log('💰 Processing upfront payment...');
+        const paymentTransaction = await ComprehensivePaymentService.getPaymentByBookingId(bookingId);
+        if (paymentTransaction) {
+          await ComprehensivePaymentService.processUpfrontPayment(
+            paymentTransaction.id!,
+            paymentCalculation.upfrontAmount,
+            transactionId
+          );
+          console.log('✅ Upfront payment processed successfully');
+        } else {
+          throw new Error('Payment transaction not found after creation');
+        }
+      } catch (paymentProcessError) {
+        console.error('❌ Failed to process upfront payment:', paymentProcessError);
+        throw new Error(`Payment processing failed: ${paymentProcessError.message}`);
       }
+
+      console.log('✅ Booking process completed successfully');
 
       toast({
         title: "Booking Confirmed!",
@@ -238,11 +260,11 @@ const BookingConfirmationModal: React.FC<BookingConfirmationModalProps> = ({
       onBookingComplete();
       onClose();
       
-    } catch (error) {
-      console.error('Error creating booking:', error);
+    } catch (error: any) {
+      console.error('❌ Booking creation failed:', error);
       toast({
         title: "Booking Failed",
-        description: "Failed to create booking after payment. Please contact support.",
+        description: error.message || "Failed to create booking after payment. Please contact support.",
         variant: "destructive"
       });
     } finally {
@@ -276,24 +298,26 @@ const BookingConfirmationModal: React.FC<BookingConfirmationModalProps> = ({
 
         <div className="space-y-6">
           {/* Driver Info */}
-          <Card className="border border-border">
+          <Card className="border border-gray-300 bg-white shadow-sm">
             <CardContent className="p-4">
+              <h4 className="font-medium text-gray-900 mb-3">Selected Driver</h4>
               <div className="flex items-center gap-4">
-                <Avatar className="w-12 h-12">
-                  <AvatarFallback className="bg-primary text-primary-foreground">
+                <Avatar className="w-14 h-14">
+                  <AvatarFallback className="bg-blue-600 text-white text-lg font-semibold">
                     {getInitials(driver.firstName, driver.lastName)}
                   </AvatarFallback>
                 </Avatar>
-                <div>
-                  <h3 className="font-semibold text-foreground">
+                <div className="flex-1">
+                  <h3 className="font-semibold text-gray-900 text-lg">
                     {driver.firstName} {driver.lastName}
                   </h3>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-gray-800 font-medium flex items-center gap-2 mt-1">
+                    <Phone className="w-4 h-4 text-blue-600" />
                     {driver.phone}
                   </p>
                   {driver.vehicle && (
-                    <p className="text-sm text-muted-foreground">
-                      {driver.vehicle.color} {driver.vehicle.model}
+                    <p className="text-sm text-gray-800 font-medium mt-1">
+                      <span className="text-gray-900 font-semibold">Vehicle:</span> {driver.vehicle.color} {driver.vehicle.model}
                     </p>
                   )}
                 </div>
@@ -302,26 +326,27 @@ const BookingConfirmationModal: React.FC<BookingConfirmationModalProps> = ({
           </Card>
 
           {/* Child Info */}
-          <Card className="border border-border">
+          <Card className="border border-gray-300 bg-white shadow-sm">
             <CardContent className="p-4">
-              <h4 className="font-medium text-foreground mb-2">Trip Details</h4>
-              <div className="space-y-2">
+              <h4 className="font-medium text-gray-900 mb-3">Trip Details</h4>
+              <div className="space-y-3">
                 <div className="flex items-center gap-2 text-sm">
-                  <Users className="w-4 h-4 text-muted-foreground" />
-                  <span className="font-medium">Child:</span> {child.fullName}
+                  <Users className="w-4 h-4 text-blue-600" />
+                  <span className="font-semibold text-gray-900">Child:</span> 
+                  <span className="font-medium text-gray-800">{child.fullName}</span>
                 </div>
                 <div className="flex items-start gap-2 text-sm">
-                  <MapPin className="w-4 h-4 text-muted-foreground mt-0.5" />
+                  <MapPin className="w-4 h-4 text-green-600 mt-0.5" />
                   <div>
-                    <span className="font-medium">Pickup:</span><br />
-                    {child.tripStartLocation.address}
+                    <span className="font-semibold text-gray-900">Pickup:</span><br />
+                    <span className="text-gray-800 font-medium">{child.tripStartLocation.address}</span>
                   </div>
                 </div>
                 <div className="flex items-start gap-2 text-sm">
-                  <MapPin className="w-4 h-4 text-muted-foreground mt-0.5" />
+                  <MapPin className="w-4 h-4 text-red-600 mt-0.5" />
                   <div>
-                    <span className="font-medium">Drop-off:</span><br />
-                    {child.schoolLocation.address}
+                    <span className="font-semibold text-gray-900">Drop-off:</span><br />
+                    <span className="text-gray-800 font-medium">{child.schoolLocation.address}</span>
                   </div>
                 </div>
               </div>
@@ -329,9 +354,9 @@ const BookingConfirmationModal: React.FC<BookingConfirmationModalProps> = ({
           </Card>
 
           {/* Booking Details */}
-          <Card className="border border-border">
+          <Card className="border border-gray-300 bg-white shadow-sm">
             <CardContent className="p-4 space-y-4">
-              <h4 className="font-medium text-foreground">Booking Period</h4>
+              <h4 className="font-medium text-gray-900">Booking Period</h4>
               
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
@@ -470,7 +495,7 @@ const BookingConfirmationModal: React.FC<BookingConfirmationModalProps> = ({
             </Button>
             <Button 
               onClick={handleConfirmBooking}
-              className="flex-1"
+              className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-md"
               disabled={loading || !startDate || !endDate || !rideTime || !paymentCalculation}
             >
               {loading 

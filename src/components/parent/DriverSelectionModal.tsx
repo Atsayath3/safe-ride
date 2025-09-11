@@ -62,11 +62,11 @@ const DriverSelectionModal: React.FC<DriverSelectionModalProps> = ({
     let filtered = [...allDrivers];
     console.log('🔍 Applying filters to', allDrivers.length, 'drivers');
 
-    // Only exclude drivers with Poor routes (keep Unknown and others)
+    // Filter out drivers with Poor or Unknown routes
     filtered = filtered.filter(driver => {
       const compatibility = getRouteCompatibility(driver);
       console.log(`🗺️ ${driver.firstName} route compatibility: ${compatibility}`);
-      return compatibility !== 'Poor';
+      return compatibility !== 'Poor' && compatibility !== 'Unknown';
     });
     console.log('📍 After route filter:', filtered.length, 'drivers remaining');
 
@@ -285,67 +285,82 @@ const DriverSelectionModal: React.FC<DriverSelectionModalProps> = ({
                       
                       <div className="flex-1 space-y-2">
                         <div className="flex items-center justify-between">
-                          <h3 className="font-semibold text-foreground">
+                          <h3 className="font-semibold text-gray-900 text-lg">
                             {driver.firstName} {driver.lastName}
                             {driver.gender && (
-                              <span className="ml-2 text-xs text-muted-foreground">
+                              <span className="ml-2 text-sm text-gray-600 font-normal">
                                 ({driver.gender})
                               </span>
                             )}
                           </h3>
                           <div className="flex gap-2">
                             <Badge variant={compatibility === 'Excellent' ? 'default' : 
-                                           compatibility === 'Good' ? 'secondary' : 'outline'}>
+                                           compatibility === 'Good' ? 'secondary' : 'outline'}
+                                   className={compatibility === 'Excellent' ? 'bg-green-600 text-white' :
+                                             compatibility === 'Good' ? 'bg-blue-600 text-white' : 
+                                             'bg-yellow-600 text-white'}>
                               {compatibility} Route
                             </Badge>
                             {driver.vehicle?.type && (
-                              <Badge variant="outline" className="text-xs">
+                              <Badge variant="outline" className="text-sm border-gray-400 text-gray-700">
                                 {driver.vehicle.type}
                               </Badge>
                             )}
                           </div>
                         </div>
                         
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Phone className="w-4 h-4" />
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 text-sm text-gray-800 font-medium">
+                            <Phone className="w-4 h-4 text-blue-600" />
                             {driver.phone}
                           </div>
                           
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Users className="w-4 h-4" />
-                            {availability?.availableSeats || 0} of {availability?.totalSeats || 0} seats available
+                          <div className="flex items-center gap-2 text-sm text-gray-800 font-medium">
+                            <Users className="w-4 h-4 text-green-600" />
+                            <span className="text-green-700 font-semibold">
+                              {availability?.availableSeats || 0} available
+                            </span>
+                            <span className="text-gray-600">
+                              of {availability?.totalSeats || 0} total seats
+                            </span>
                           </div>
                           
                           {driver.vehicle && (
                             <div className="space-y-1">
-                              <div className="text-sm text-muted-foreground">
-                                <strong>Vehicle:</strong> {driver.vehicle.color} {driver.vehicle.model} ({driver.vehicle.year})
+                              <div className="text-sm text-gray-800">
+                                <strong className="text-gray-900">Vehicle:</strong> 
+                                <span className="ml-1 font-medium">{driver.vehicle.color} {driver.vehicle.model} ({driver.vehicle.year})</span>
                               </div>
-                              <div className="text-sm text-muted-foreground">
-                                <strong>Type:</strong> {driver.vehicle.type} | <strong>Capacity:</strong> {driver.vehicle.capacity}
+                              <div className="text-sm text-gray-800">
+                                <strong className="text-gray-900">Type:</strong> 
+                                <span className="ml-1 font-medium">{driver.vehicle.type}</span>
+                                <span className="mx-2 text-gray-500">|</span>
+                                <strong className="text-gray-900">Capacity:</strong> 
+                                <span className="ml-1 font-medium">{driver.vehicle.capacity}</span>
                               </div>
                             </div>
                           )}
                           
                           {driver.routes?.startPoint && driver.routes?.endPoint && (
-                            <div className="space-y-1">
-                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                <MapPin className="w-4 h-4" />
-                                From: {driver.routes.startPoint.address}
+                            <div className="space-y-1 bg-gray-50 p-2 rounded-md border">
+                              <div className="flex items-center gap-2 text-sm text-gray-800">
+                                <MapPin className="w-4 h-4 text-green-600" />
+                                <strong className="text-gray-900">From:</strong>
+                                <span className="font-medium">{driver.routes.startPoint.address}</span>
                               </div>
-                              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                <MapPin className="w-4 h-4" />
-                                To: {driver.routes.endPoint.address}
+                              <div className="flex items-center gap-2 text-sm text-gray-800">
+                                <MapPin className="w-4 h-4 text-red-600" />
+                                <strong className="text-gray-900">To:</strong>
+                                <span className="font-medium">{driver.routes.endPoint.address}</span>
                               </div>
                             </div>
                           )}
                         </div>
                         
-                        <div className="flex items-center gap-2 pt-2">
+                        <div className="flex items-center gap-2 pt-3">
                           <Button 
                             onClick={() => handleDriverSelection(driver)}
-                            className="flex-1"
+                            className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-md"
                             disabled={!availability || availability.availableSeats === 0}
                           >
                             {availability && availability.availableSeats > 0 ? 'Select Driver' : 'No Seats Available'}

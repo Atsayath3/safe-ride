@@ -109,7 +109,7 @@ const DriverFilter: React.FC<DriverFilterProps> = ({
             ))}
           </div>
           <p className="text-xs text-blue-600 mt-1">
-            Only drivers with good routes are shown
+            Only drivers with established routes are shown
           </p>
         </div>
 

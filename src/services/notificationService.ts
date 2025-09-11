@@ -410,6 +410,51 @@ export class NotificationService {
     }
   }
 
+  static async sendRideCancellationNotification(
+    parentIds: string[],
+    driverId: string,
+    driverName: string,
+    cancellationDate: Date,
+    reason?: string
+  ): Promise<void> {
+    try {
+      console.log('📢 Sending ride cancellation notifications to parents:', parentIds);
+      
+      const dateStr = cancellationDate.toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+      
+      const title = 'Ride Cancelled';
+      const message = `Driver ${driverName} has cancelled rides for ${dateStr}.${reason ? ` Reason: ${reason}` : ''} Please make alternative arrangements.`;
+      
+      // Send notification to each parent
+      const notificationPromises = parentIds.map(parentId => 
+        this.sendNotification(
+          parentId,
+          driverId,
+          'booking_cancelled',
+          title,
+          message,
+          {
+            cancellationDate: cancellationDate.toISOString(),
+            driverId,
+            driverName,
+            reason
+          }
+        )
+      );
+      
+      await Promise.all(notificationPromises);
+      console.log('✅ Ride cancellation notifications sent successfully');
+    } catch (error) {
+      console.error('❌ Error sending ride cancellation notifications:', error);
+      throw error;
+    }
+  }
+
   // Subscribe to real-time notifications
   static subscribeToNotifications(
     userId: string, 

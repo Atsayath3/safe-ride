@@ -15,6 +15,33 @@ import { Booking, BookingRequest, DriverAvailability } from '@/interfaces/bookin
 import { UserProfile } from '@/contexts/AuthContext';
 
 export class BookingService {
+  
+  // Helper function to convert Firestore data to Booking object
+  private static convertFirestoreDataToBooking(doc: any, data: any): Booking {
+    return {
+      id: doc.id,
+      ...data,
+      bookingDate: data.bookingDate?.toDate(),
+      rideDate: data.rideDate?.toDate(),
+      endDate: data.endDate?.toDate(),
+      createdAt: data.createdAt?.toDate(),
+      updatedAt: data.updatedAt?.toDate(),
+      cancelledDates: data.cancelledDates || [], // Ensure this field is always an array
+    } as Booking;
+  }
+
+  // Helper function to clean data for Firestore (remove undefined values)
+  private static cleanFirestoreData(data: any): any {
+    const cleaned: any = {};
+    
+    for (const [key, value] of Object.entries(data)) {
+      if (value !== undefined) {
+        cleaned[key] = value;
+      }
+    }
+    
+    return cleaned;
+  }
   static async getAvailableDrivers(childLocation?: { pickup: { lat: number; lng: number }, school: { lat: number; lng: number } }): Promise<UserProfile[]> {
     try {
       console.log('🔍 Searching for available drivers...');
@@ -176,20 +203,9 @@ export class BookingService {
         updatedAt: new Date(),
       };
 
-      // Helper function to remove undefined values
-      const cleanUndefinedValues = (obj: any): any => {
-        const cleaned: any = {};
-        for (const [key, value] of Object.entries(obj)) {
-          if (value !== undefined) {
-            cleaned[key] = value;
-          }
-        }
-        return cleaned;
-      };
-
       // Prepare data for Firestore with proper Timestamp conversion
       const firestoreData: any = {
-        ...cleanUndefinedValues(bookingData),
+        ...bookingData,
         bookingDate: Timestamp.fromDate(bookingData.bookingDate),
         rideDate: Timestamp.fromDate(bookingData.rideDate),
         createdAt: Timestamp.fromDate(bookingData.createdAt),
@@ -212,6 +228,28 @@ export class BookingService {
 
   static async createConfirmedBooking(bookingRequest: BookingRequest): Promise<string> {
     try {
+      console.log('📝 Creating confirmed booking with request:', bookingRequest);
+      
+      // Validate required fields
+      if (!bookingRequest.parentId) {
+        throw new Error('Parent ID is required');
+      }
+      if (!bookingRequest.driverId) {
+        throw new Error('Driver ID is required');
+      }
+      if (!bookingRequest.childId) {
+        throw new Error('Child ID is required');
+      }
+      if (!bookingRequest.rideDate) {
+        throw new Error('Ride date is required');
+      }
+      if (!bookingRequest.pickupLocation) {
+        throw new Error('Pickup location is required');
+      }
+      if (!bookingRequest.dropoffLocation) {
+        throw new Error('Dropoff location is required');
+      }
+
       const bookingData: Omit<Booking, 'id'> = {
         ...bookingRequest,
         status: 'confirmed', // Directly set to confirmed - no driver approval needed
@@ -220,20 +258,11 @@ export class BookingService {
         updatedAt: new Date(),
       };
 
-      // Helper function to remove undefined values
-      const cleanUndefinedValues = (obj: any): any => {
-        const cleaned: any = {};
-        for (const [key, value] of Object.entries(obj)) {
-          if (value !== undefined) {
-            cleaned[key] = value;
-          }
-        }
-        return cleaned;
-      };
-
+      console.log('🔄 Converting booking data for Firestore...');
+      
       // Prepare data for Firestore with proper Timestamp conversion
       const firestoreData: any = {
-        ...cleanUndefinedValues(bookingData),
+        ...bookingData,
         bookingDate: Timestamp.fromDate(bookingData.bookingDate),
         rideDate: Timestamp.fromDate(bookingData.rideDate),
         createdAt: Timestamp.fromDate(bookingData.createdAt),
@@ -245,12 +274,17 @@ export class BookingService {
         firestoreData.endDate = Timestamp.fromDate(bookingData.endDate);
       }
 
-      const docRef = await addDoc(collection(db, 'bookings'), firestoreData);
+      // Clean data to remove undefined fields that Firestore doesn't support
+      const cleanedData = this.cleanFirestoreData(firestoreData);
+
+      console.log('💾 Saving booking to Firestore...');
+      const docRef = await addDoc(collection(db, 'bookings'), cleanedData);
+      console.log('✅ Booking saved successfully with ID:', docRef.id);
 
       return docRef.id;
-    } catch (error) {
-      console.error('Error creating confirmed booking:', error);
-      throw error;
+    } catch (error: any) {
+      console.error('❌ Error creating confirmed booking:', error);
+      throw new Error(`Booking creation failed: ${error.message}`);
     }
   }
 
@@ -264,14 +298,10 @@ export class BookingService {
       );
 
       const snapshot = await getDocs(q);
-      return snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        bookingDate: doc.data().bookingDate?.toDate(),
-        rideDate: doc.data().rideDate?.toDate(),
-        createdAt: doc.data().createdAt?.toDate(),
-        updatedAt: doc.data().updatedAt?.toDate(),
-      })) as Booking[];
+      return snapshot.docs.map(doc => {
+        const data = doc.data() as any;
+        return this.convertFirestoreDataToBooking(doc, data);
+      }) as Booking[];
     } catch (error) {
       console.error('Error fetching parent bookings:', error);
       throw error;
@@ -298,15 +328,7 @@ export class BookingService {
         
         return snapshot.docs.map(doc => {
           const data = doc.data() as any;
-          return {
-            id: doc.id,
-            ...data,
-            bookingDate: data.bookingDate?.toDate(),
-            rideDate: data.rideDate?.toDate(),
-            endDate: data.endDate?.toDate(), // Handle period booking end date
-            createdAt: data.createdAt?.toDate(),
-            updatedAt: data.updatedAt?.toDate(),
-          };
+          return this.convertFirestoreDataToBooking(doc, data);
         }) as Booking[];
       } catch (indexError) {
         console.warn('📋 OrderBy query failed, trying without orderBy:', indexError);
@@ -322,15 +344,7 @@ export class BookingService {
         
         const bookings = snapshot.docs.map(doc => {
           const data = doc.data() as any;
-          return {
-            id: doc.id,
-            ...data,
-            bookingDate: data.bookingDate?.toDate(),
-            rideDate: data.rideDate?.toDate(),
-            endDate: data.endDate?.toDate(), // Handle period booking end date
-            createdAt: data.createdAt?.toDate(),
-            updatedAt: data.updatedAt?.toDate(),
-          };
+          return this.convertFirestoreDataToBooking(doc, data);
         }) as Booking[];
         
         // Sort manually by createdAt in descending order
@@ -363,6 +377,67 @@ export class BookingService {
     }
   }
 
+  static async cancelBookingForDate(bookingId: string, cancelDate: Date): Promise<void> {
+    try {
+      // Get the booking first to check if it's a period booking
+      const booking = await this.getBookingById(bookingId);
+      if (!booking) {
+        throw new Error('Booking not found');
+      }
+
+      const cancelDateStr = cancelDate.toISOString().split('T')[0]; // YYYY-MM-DD format
+
+      if (booking.isRecurring && booking.endDate) {
+        // For period bookings, add the date to cancelledDates array
+        const currentCancelledDates = booking.cancelledDates || [];
+        
+        // Avoid duplicate cancelled dates
+        if (!currentCancelledDates.includes(cancelDateStr)) {
+          const updatedCancelledDates = [...currentCancelledDates, cancelDateStr];
+          
+          const bookingRef = doc(db, 'bookings', bookingId);
+          await updateDoc(bookingRef, {
+            cancelledDates: updatedCancelledDates,
+            updatedAt: Timestamp.fromDate(new Date())
+          });
+        }
+      } else {
+        // For single-day bookings, update status to cancelled
+        await this.updateBookingStatus(bookingId, 'cancelled');
+      }
+    } catch (error) {
+      console.error('Error cancelling booking for date:', error);
+      throw error;
+    }
+  }
+
+  // Helper method to check if a booking is active for a specific date
+  static isBookingActiveForDate(booking: Booking, checkDate: Date): boolean {
+    if (booking.status !== 'confirmed') return false;
+    
+    const checkDateStr = checkDate.toISOString().split('T')[0];
+    
+    // For single-day bookings
+    if (!booking.isRecurring || !booking.endDate) {
+      const bookingDate = new Date(booking.rideDate);
+      bookingDate.setHours(0, 0, 0, 0);
+      checkDate.setHours(0, 0, 0, 0);
+      return bookingDate.getTime() === checkDate.getTime();
+    }
+    
+    // For period bookings, check if date is within range and not cancelled
+    const bookingStart = new Date(booking.rideDate);
+    bookingStart.setHours(0, 0, 0, 0);
+    const bookingEnd = new Date(booking.endDate);
+    bookingEnd.setHours(23, 59, 59, 999);
+    
+    const isWithinPeriod = checkDate >= bookingStart && checkDate <= bookingEnd;
+    const isWeekday = checkDate.getDay() !== 0 && checkDate.getDay() !== 6; // Not Sunday or Saturday
+    const isNotCancelled = !(booking.cancelledDates?.includes(checkDateStr) || false);
+    
+    return isWithinPeriod && isWeekday && isNotCancelled;
+  }
+
   static async getBookingById(bookingId: string): Promise<Booking | null> {
     try {
       const bookingRef = doc(db, 'bookings', bookingId);
@@ -373,17 +448,85 @@ export class BookingService {
       }
 
       const data = bookingDoc.data();
-      return {
-        id: bookingDoc.id,
-        ...data,
-        bookingDate: data.bookingDate?.toDate(),
-        rideDate: data.rideDate?.toDate(),
-        endDate: data.endDate?.toDate(),
-        createdAt: data.createdAt?.toDate(),
-        updatedAt: data.updatedAt?.toDate(),
-      } as Booking;
+      return this.convertFirestoreDataToBooking(bookingDoc, data);
     } catch (error) {
       console.error('Error getting booking by ID:', error);
+      throw error;
+    }
+  }
+
+  static async getDriverBookingsForDate(driverId: string, date: Date): Promise<Booking[]> {
+    try {
+      console.log('📅 Fetching bookings for driver on date:', driverId, date);
+      
+      const bookingsRef = collection(db, 'bookings');
+      
+      // Try simplified query first
+      let q = query(
+        bookingsRef,
+        where('driverId', '==', driverId),
+        where('status', '==', 'confirmed')
+      );
+      
+      let snapshot;
+      try {
+        snapshot = await getDocs(q);
+        console.log(`📅 Found ${snapshot.docs.length} total confirmed bookings for driver`);
+      } catch (indexError) {
+        console.warn('📅 Compound query failed, trying even simpler query:', indexError);
+        
+        // Ultra-simple query - just get by driver
+        q = query(bookingsRef, where('driverId', '==', driverId));
+        snapshot = await getDocs(q);
+        console.log(`📅 Found ${snapshot.docs.length} total bookings for driver (any status)`);
+      }
+      
+      const allBookings = snapshot.docs.map(doc => {
+        const data = doc.data() as any;
+        return this.convertFirestoreDataToBooking(doc, data);
+      }) as Booking[];
+      
+      console.log(`📅 Processing ${allBookings.length} bookings for date filtering`);
+      
+      // Filter bookings in JavaScript for both status and date
+      const relevantBookings = allBookings.filter(booking => {
+        // First filter by status if we had to use the ultra-simple query
+        if (booking.status !== 'confirmed') return false;
+        
+        if (!booking.rideDate) return false;
+        
+        const targetDate = new Date(date);
+        targetDate.setHours(0, 0, 0, 0);
+        const targetDateStr = targetDate.toISOString().split('T')[0]; // YYYY-MM-DD format
+        
+        // For single-day bookings
+        if (!booking.isRecurring || !booking.endDate) {
+          const bookingDate = new Date(booking.rideDate);
+          bookingDate.setHours(0, 0, 0, 0);
+          return bookingDate.getTime() === targetDate.getTime();
+        }
+        
+        // For period bookings
+        const bookingStart = new Date(booking.rideDate);
+        bookingStart.setHours(0, 0, 0, 0);
+        const bookingEnd = new Date(booking.endDate);
+        bookingEnd.setHours(23, 59, 59, 999);
+        
+        // Check if target date falls within the booking period and is a weekday
+        const isWithinPeriod = targetDate >= bookingStart && targetDate <= bookingEnd;
+        const isWeekday = targetDate.getDay() !== 0 && targetDate.getDay() !== 6; // Not Sunday or Saturday
+        
+        // Check if this specific date has been cancelled
+        const isCancelledForThisDate = booking.cancelledDates?.includes(targetDateStr) || false;
+        
+        return isWithinPeriod && isWeekday && !isCancelledForThisDate;
+      });
+      
+      console.log(`📅 Found ${relevantBookings.length} relevant bookings for the selected date`);
+      
+      return relevantBookings.sort((a, b) => a.rideDate.getTime() - b.rideDate.getTime());
+    } catch (error) {
+      console.error('❌ Error fetching driver bookings for date:', error);
       throw error;
     }
   }

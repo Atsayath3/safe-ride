@@ -85,55 +85,55 @@ const RouteQualityWarningModal: React.FC<RouteQualityWarningModalProps> = ({
           </Card>
 
           {/* Driver & Route Information */}
-          <Card>
+          <Card className="border border-gray-300 bg-white shadow-sm">
             <CardContent className="p-4">
-              <h3 className="font-semibold mb-3">Driver & Route Details</h3>
+              <h3 className="font-semibold mb-3 text-gray-900">Driver & Route Details</h3>
               
               <div className="space-y-4">
                 {/* Driver Info */}
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="font-medium">{driver.firstName} {driver.lastName}</p>
-                    <p className="text-sm text-muted-foreground">{driver.phone}</p>
+                    <p className="font-semibold text-gray-900 text-lg">{driver.firstName} {driver.lastName}</p>
+                    <p className="text-sm text-gray-800 font-medium">{driver.phone}</p>
                   </div>
-                  <Badge className={`${getQualityColor(routeQuality)} border`}>
+                  <Badge className={`${getQualityColor(routeQuality)} border font-medium`}>
                     {routeQuality} Route
                   </Badge>
                 </div>
 
                 {/* Vehicle Info */}
                 {driver.vehicle && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Users className="w-4 h-4" />
-                    <span>{driver.vehicle.color} {driver.vehicle.model} ({driver.vehicle.year}) - {driver.vehicle.capacity} capacity</span>
+                  <div className="flex items-center gap-2 text-sm text-gray-800 font-medium">
+                    <Users className="w-4 h-4 text-blue-600" />
+                    <span><strong className="text-gray-900">Vehicle:</strong> {driver.vehicle.color} {driver.vehicle.model} ({driver.vehicle.year}) - {driver.vehicle.capacity} capacity</span>
                   </div>
                 )}
 
                 {/* Route Details */}
                 {driver.routes?.startPoint && driver.routes?.endPoint && (
-                  <div className="space-y-2">
+                  <div className="space-y-2 bg-gray-50 p-3 rounded-md border">
                     <div className="flex items-center gap-2 text-sm">
                       <MapPin className="w-4 h-4 text-green-600" />
-                      <span><strong>Driver's Route Start:</strong> {driver.routes.startPoint.address}</span>
+                      <span className="text-gray-800 font-medium"><strong className="text-gray-900">Driver's Route Start:</strong> {driver.routes.startPoint.address}</span>
                     </div>
                     <div className="flex items-center gap-2 text-sm">
                       <MapPin className="w-4 h-4 text-red-600" />
-                      <span><strong>Driver's Route End:</strong> {driver.routes.endPoint.address}</span>
+                      <span className="text-gray-800 font-medium"><strong className="text-gray-900">Driver's Route End:</strong> {driver.routes.endPoint.address}</span>
                     </div>
                   </div>
                 )}
 
-                <hr className="my-3" />
+                <hr className="my-3 border-gray-300" />
 
                 {/* Child's Required Route */}
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 text-sm">
                     <MapPin className="w-4 h-4 text-blue-600" />
-                    <span><strong>Child's Pickup:</strong> {child.tripStartLocation.address}</span>
+                    <span className="text-gray-800 font-medium"><strong className="text-gray-900">Child's Pickup:</strong> {child.tripStartLocation.address}</span>
                   </div>
                   <div className="flex items-center gap-2 text-sm">
                     <MapPin className="w-4 h-4 text-purple-600" />
-                    <span><strong>Child's School:</strong> {child.schoolLocation.address}</span>
+                    <span className="text-gray-800 font-medium"><strong className="text-gray-900">Child's School:</strong> {child.schoolLocation.address}</span>
                   </div>
                 </div>
               </div>
@@ -145,13 +145,13 @@ const RouteQualityWarningModal: React.FC<RouteQualityWarningModalProps> = ({
             <Button 
               variant="outline" 
               onClick={onClose}
-              className="flex-1"
+              className="flex-1 border-gray-400 text-gray-700 hover:bg-gray-100 font-medium"
             >
               Choose Different Driver
             </Button>
             <Button 
               onClick={onContinue}
-              className="flex-1 bg-orange-600 hover:bg-orange-700 text-white"
+              className="flex-1 bg-orange-600 hover:bg-orange-700 text-white font-medium shadow-md"
             >
               Continue Anyway
             </Button>

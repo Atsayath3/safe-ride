@@ -20,6 +20,7 @@ export interface Booking {
   isRecurring?: boolean; // True if this is a period booking
   recurringDays?: number; // Number of school days in the period
   dailyTime?: string; // Time for daily pickup (HH:MM format)
+  cancelledDates?: string[]; // Array of cancelled dates in YYYY-MM-DD format for period bookings
   createdAt: Date;
   updatedAt: Date;
   notes?: string;

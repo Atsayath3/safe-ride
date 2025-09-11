@@ -6,8 +6,9 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import ResponsiveLayout from '@/components/ResponsiveLayout';
 import ActiveRideTracker from '@/components/driver/ActiveRideTracker';
+import RideCancellationModal from '@/components/driver/RideCancellationModal';
 import NotificationBell from '@/components/NotificationBell';
-import { MapPin, Clock, Users, Settings, Calendar, Play, Route } from 'lucide-react';
+import { MapPin, Clock, Users, Settings, Calendar, Play, Route, AlertTriangle } from 'lucide-react';
 import { doc, updateDoc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { toast } from '@/hooks/use-toast';
@@ -22,6 +23,7 @@ const DriverDashboard = () => {
   const [loading, setLoading] = useState(false);
   const [activeRide, setActiveRide] = useState<ActiveRide | null>(null);
   const [startingRide, setStartingRide] = useState(false);
+  const [showCancellationModal, setShowCancellationModal] = useState(false);
 
   useEffect(() => {
     if (userProfile?.uid) {
@@ -438,6 +440,32 @@ const DriverDashboard = () => {
               </Card>
             </div>
 
+            {/* Ride Management */}
+            {userProfile?.status === 'approved' && (
+              <Card className="border-red-200 shadow-lg bg-white">
+                <CardHeader className="bg-gradient-to-r from-red-50 to-white rounded-t-lg">
+                  <CardTitle className="text-lg text-red-900 flex items-center gap-2">
+                    <AlertTriangle className="w-5 h-5" />
+                    Ride Management
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <p className="text-sm text-gray-600">
+                    Manage your scheduled rides and inform parents about cancellations.
+                  </p>
+                  
+                  <Button
+                    onClick={() => setShowCancellationModal(true)}
+                    variant="outline"
+                    className="w-full border-red-300 text-red-700 hover:bg-red-50 hover:border-red-400"
+                  >
+                    <AlertTriangle className="w-4 h-4 mr-2" />
+                    Cancel Rides for a Day
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+
             {/* Logout */}
             <Button 
               variant="outline" 
@@ -450,6 +478,12 @@ const DriverDashboard = () => {
         )}
       </div>
     </ResponsiveLayout>
+    
+    {/* Modals */}
+    <RideCancellationModal
+      isOpen={showCancellationModal}
+      onClose={() => setShowCancellationModal(false)}
+    />
     </div>
   );
 };

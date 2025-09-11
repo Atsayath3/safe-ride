@@ -58,21 +58,21 @@ const BookingRequestCard: React.FC<BookingRequestCardProps> = ({
           <div className="space-y-3">
             <div className="flex items-center gap-2">
               <User className="w-4 h-4 text-orange-600" />
-              <span className="font-medium text-orange-900">Booking #{booking.id.slice(-6)}</span>
+              <span className="font-semibold text-gray-900">Booking #{booking.id.slice(-6)}</span>
             </div>
 
             {booking.isRecurring && booking.endDate ? (
               <>
                 <div className="flex items-center gap-2">
                   <CalendarDays className="w-4 h-4 text-orange-600" />
-                  <span className="text-sm text-orange-800">
+                  <span className="text-sm text-gray-800 font-medium">
                     Period Booking: {format(booking.rideDate, 'EEEE, MMMM dd, yyyy')} - {format(booking.endDate, 'EEEE, MMMM dd, yyyy')}
                   </span>
                 </div>
 
                 <div className="flex items-center gap-2">
                   <Clock className="w-4 h-4 text-orange-600" />
-                  <span className="text-sm text-orange-800">
+                  <span className="text-sm text-gray-800 font-medium">
                     Daily pickup at {booking.dailyTime || format(booking.rideDate, 'hh:mm a')}
                   </span>
                 </div>
@@ -107,14 +107,14 @@ const BookingRequestCard: React.FC<BookingRequestCardProps> = ({
               <>
                 <div className="flex items-center gap-2">
                   <Calendar className="w-4 h-4 text-orange-600" />
-                  <span className="text-sm text-orange-800">
+                  <span className="text-sm text-gray-800 font-medium">
                     {format(booking.rideDate, 'EEEE, MMMM dd, yyyy')}
                   </span>
                 </div>
 
                 <div className="flex items-center gap-2">
                   <Clock className="w-4 h-4 text-orange-600" />
-                  <span className="text-sm text-orange-800">
+                  <span className="text-sm text-gray-800 font-medium">
                     {format(booking.rideDate, 'hh:mm a')}
                   </span>
                 </div>
@@ -125,8 +125,8 @@ const BookingRequestCard: React.FC<BookingRequestCardProps> = ({
               <div className="flex items-start gap-2">
                 <MapPin className="w-4 h-4 text-green-600 mt-0.5" />
                 <div className="flex-1">
-                  <div className="text-sm font-medium text-orange-900">Pickup</div>
-                  <div className="text-sm text-orange-600">
+                  <div className="text-sm font-semibold text-gray-900">Pickup</div>
+                  <div className="text-sm text-gray-800 font-medium">
                     {booking.pickupLocation.address}
                   </div>
                 </div>
@@ -135,8 +135,8 @@ const BookingRequestCard: React.FC<BookingRequestCardProps> = ({
               <div className="flex items-start gap-2">
                 <MapPin className="w-4 h-4 text-red-600 mt-0.5" />
                 <div className="flex-1">
-                  <div className="text-sm font-medium text-orange-900">Drop-off</div>
-                  <div className="text-sm text-orange-600">
+                  <div className="text-sm font-semibold text-gray-900">Drop-off</div>
+                  <div className="text-sm text-gray-800 font-medium">
                     {booking.dropoffLocation.address}
                   </div>
                 </div>
@@ -144,9 +144,9 @@ const BookingRequestCard: React.FC<BookingRequestCardProps> = ({
             </div>
 
             {booking.notes && (
-              <div className="bg-orange-50 rounded-lg p-3 border border-orange-100">
-                <div className="text-sm font-medium mb-1 text-orange-900">Special Instructions</div>
-                <div className="text-sm text-orange-700">{booking.notes}</div>
+              <div className="bg-orange-50 rounded-lg p-3 border border-orange-200">
+                <div className="text-sm font-semibold mb-1 text-gray-900">Special Instructions</div>
+                <div className="text-sm text-gray-800 font-medium">{booking.notes}</div>
               </div>
             )}
           </div>
