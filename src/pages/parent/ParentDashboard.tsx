@@ -151,10 +151,19 @@ const ParentDashboard = () => {
     navigate(`/parent/edit-child/${selectedChild.id}`);
   };
 
+  const handleEditChildDirect = (child: Child) => {
+    navigate(`/parent/edit-child/${child.id}`);
+  };
+
   const handleDeleteChild = () => {
     if (!selectedChild) return;
     setShowDeleteConfirmation(true);
     setShowOptionsModal(false);
+  };
+
+  const handleDeleteChildDirect = (child: Child) => {
+    setSelectedChild(child);
+    setShowDeleteConfirmation(true);
   };
 
   const handleCloseDriverSelection = () => {
@@ -282,6 +291,8 @@ const ParentDashboard = () => {
                         key={child.id} 
                         child={child} 
                         onBookNewRide={() => handleBookNewRide(child)}
+                        onEditChild={handleEditChildDirect}
+                        onDeleteChild={handleDeleteChildDirect}
                         onRefresh={() => {
                           // Refresh function for real-time updates
                           const fetchChildren = async () => {

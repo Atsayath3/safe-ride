@@ -3,7 +3,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { MapPin, School, Clock, Plus, MoreHorizontal, Calendar } from 'lucide-react';
+import { MapPin, School, Clock, Plus, Calendar, MoreHorizontal, Edit, Trash2 } from 'lucide-react';
 import { Child } from '@/pages/parent/ParentDashboard';
 import { Booking } from '../../interfaces/booking';
 import { BookingManagementService } from '../../services/bookingManagementService';
@@ -13,16 +13,21 @@ interface EnhancedChildCardProps {
   child: Child;
   onBookNewRide: () => void;
   onRefresh?: () => void;
+  onEditChild?: (child: Child) => void;
+  onDeleteChild?: (child: Child) => void;
 }
 
 const EnhancedChildCard: React.FC<EnhancedChildCardProps> = ({ 
   child, 
   onBookNewRide,
-  onRefresh 
+  onRefresh,
+  onEditChild,
+  onDeleteChild
 }) => {
   const [activeBooking, setActiveBooking] = useState<Booking | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showExtendModal, setShowExtendModal] = useState(false);
+  const [showOptionsMenu, setShowOptionsMenu] = useState(false);
 
   const getInitials = (name: string) => {
     return name
@@ -81,11 +86,53 @@ const EnhancedChildCard: React.FC<EnhancedChildCardProps> = ({
                   <h3 className="font-nunito font-semibold text-lg text-blue-900">
                     {child.fullName}
                   </h3>
-                  {statusInfo && (
-                    <Badge className={`text-xs font-medium ${statusInfo.bgColor} ${statusInfo.color} border-0`}>
-                      {statusInfo.status}
-                    </Badge>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {statusInfo && (
+                      <Badge className={`text-xs font-medium ${statusInfo.bgColor} ${statusInfo.color} border-0`}>
+                        {statusInfo.status}
+                      </Badge>
+                    )}
+                    <div className="relative">
+                      <button
+                        onClick={() => setShowOptionsMenu(!showOptionsMenu)}
+                        className="p-1 text-gray-400 hover:text-gray-600 rounded-md hover:bg-gray-100"
+                      >
+                        <MoreHorizontal className="w-4 h-4" />
+                      </button>
+                      
+                      {/* Options Dropdown Menu */}
+                      {showOptionsMenu && (
+                        <>
+                          <div 
+                            className="fixed inset-0 z-10" 
+                            onClick={() => setShowOptionsMenu(false)}
+                          ></div>
+                          <div className="absolute right-0 top-8 z-20 bg-white border border-gray-200 rounded-lg shadow-lg py-1 min-w-[140px]">
+                            <button
+                              onClick={() => {
+                                onEditChild?.(child);
+                                setShowOptionsMenu(false);
+                              }}
+                              className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
+                            >
+                              <Edit className="w-3 h-3" />
+                              Edit Child
+                            </button>
+                            <button
+                              onClick={() => {
+                                onDeleteChild?.(child);
+                                setShowOptionsMenu(false);
+                              }}
+                              className="w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 flex items-center gap-2"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                              Delete Child
+                            </button>
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
                 </div>
                 
                 <div className="flex items-center space-x-1 text-sm text-blue-600">
@@ -108,14 +155,9 @@ const EnhancedChildCard: React.FC<EnhancedChildCardProps> = ({
             ) : activeBooking ? (
               <div className={`p-4 rounded-lg border ${statusInfo?.bgColor}`}>
                 <div className="space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="w-4 h-4 text-gray-600" />
-                      <span className="text-sm font-medium text-gray-900">Current Booking</span>
-                    </div>
-                    <button className="text-gray-400 hover:text-gray-600">
-                      <MoreHorizontal className="w-4 h-4" />
-                    </button>
+                  <div className="flex items-center gap-2">
+                    <Calendar className="w-4 h-4 text-gray-600" />
+                    <span className="text-sm font-medium text-gray-900">Current Booking</span>
                   </div>
                   
                   <div className="space-y-2 text-sm">
@@ -142,21 +184,14 @@ const EnhancedChildCard: React.FC<EnhancedChildCardProps> = ({
                     )}
                   </div>
                   
-                  <div className="flex gap-2 pt-2">
+                  <div className="pt-2">
                     <Button
                       onClick={() => setShowExtendModal(true)}
                       size="sm"
-                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                      className="w-full bg-blue-600 hover:bg-blue-700 text-white"
                     >
                       <Plus className="w-3 h-3 mr-1" />
-                      Extend
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="px-3"
-                    >
-                      <MoreHorizontal className="w-3 h-3" />
+                      Extend Booking
                     </Button>
                   </div>
                 </div>
