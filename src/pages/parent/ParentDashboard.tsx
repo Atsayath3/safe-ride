@@ -21,6 +21,7 @@ import { useAuth, UserProfile } from '@/contexts/AuthContext';
 import { toast } from '@/hooks/use-toast';
 import { LogOut } from 'lucide-react';
 import { RideService } from '@/services/rideService';
+import { BookingCleanupService } from '@/services/bookingCleanupService';
 import { ActiveRide } from '@/interfaces/ride';
 
 export interface Child {
@@ -188,12 +189,28 @@ const ParentDashboard = () => {
     if (!selectedChild) return;
     setIsDeleting(true);
     try {
+      // First, clean up all bookings associated with this child
+      console.log(`🗑️ Starting deletion process for child: ${selectedChild.fullName}`);
+      
+      const cleanupResult = await BookingCleanupService.deleteChildBookings(
+        selectedChild.id, 
+        selectedChild.fullName
+      );
+      
+      console.log(`📋 Cleaned up ${cleanupResult.deletedBookings} bookings`);
+      console.log(`👨‍💼 Notified ${cleanupResult.affectedDrivers.length} drivers`);
+      
+      // Then delete the child document
       await deleteDoc(doc(db, 'children', selectedChild.id));
+      
+      // Update UI state
       setChildren(prev => prev.filter(child => child.id !== selectedChild.id));
+      
       toast({
         title: "Child Deleted",
-        description: `${selectedChild.fullName} has been removed from your account.`,
+        description: `${selectedChild.fullName} has been removed from your account. ${cleanupResult.deletedBookings > 0 ? `${cleanupResult.deletedBookings} associated bookings were also cancelled.` : ''}`,
       });
+      
       setShowDeleteConfirmation(false);
       setSelectedChild(null);
     } catch (error) {

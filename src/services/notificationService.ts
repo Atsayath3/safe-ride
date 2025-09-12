@@ -455,6 +455,43 @@ export class NotificationService {
     }
   }
 
+  static async sendBookingCancellationNotification(
+    driverId: string,
+    childId: string,
+    details: {
+      childName: string;
+      reason: string;
+      cancelledBy: string;
+    }
+  ): Promise<void> {
+    try {
+      console.log(`📢 Sending booking cancellation notification to driver: ${driverId}`);
+      
+      const title = 'Booking Cancelled';
+      const message = `Booking for ${details.childName} has been cancelled. Reason: ${details.reason}`;
+      
+      await this.sendNotification(
+        driverId,
+        childId, // Use childId as relatedId since the booking is being deleted
+        'booking_cancelled',
+        title,
+        message,
+        {
+          childId,
+          childName: details.childName,
+          reason: details.reason,
+          cancelledBy: details.cancelledBy,
+          cancelledAt: new Date().toISOString()
+        }
+      );
+      
+      console.log('✅ Booking cancellation notification sent successfully');
+    } catch (error) {
+      console.error('❌ Error sending booking cancellation notification:', error);
+      throw error;
+    }
+  }
+
   // Subscribe to real-time notifications
   static subscribeToNotifications(
     userId: string, 
