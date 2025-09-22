@@ -5,9 +5,6 @@ import { Badge } from '@/components/ui/badge';
 import { Filter, X } from 'lucide-react';
 
 export interface DriverFilterOptions {
-  gender?: 'male' | 'female' | 'other' | null;
-  routeQuality?: 'excellent' | 'good' | 'fair' | null;
-  minAvailableSeats?: number | null;
   vehicleType?: 'van' | 'mini van' | 'school bus' | null;
 }
 
@@ -65,75 +62,6 @@ const DriverFilter: React.FC<DriverFilterProps> = ({
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Gender Filter */}
-        <div>
-          <h4 className="text-sm font-medium text-blue-900 mb-2">Gender</h4>
-          <div className="flex flex-wrap gap-2">
-            {['male', 'female', 'other'].map((gender) => (
-              <Button
-                key={gender}
-                variant={filters.gender === gender ? "default" : "outline"}
-                size="sm"
-                onClick={() => handleFilterChange('gender', gender)}
-                className={filters.gender === gender ? 
-                  "bg-blue-600 text-white" : 
-                  "border-blue-300 text-blue-700 hover:bg-blue-100"
-                }
-              >
-                {gender.charAt(0).toUpperCase() + gender.slice(1)}
-              </Button>
-            ))}
-          </div>
-        </div>
-
-        {/* Route Quality Filter */}
-        <div>
-          <h4 className="text-sm font-medium text-blue-900 mb-2">Route Quality</h4>
-          <div className="flex flex-wrap gap-2">
-            {[
-              { value: 'excellent', label: 'Excellent', color: 'bg-green-600' },
-              { value: 'good', label: 'Good', color: 'bg-blue-600' },
-              { value: 'fair', label: 'Fair', color: 'bg-yellow-600' }
-            ].map((quality) => (
-              <Button
-                key={quality.value}
-                variant={filters.routeQuality === quality.value ? "default" : "outline"}
-                size="sm"
-                onClick={() => handleFilterChange('routeQuality', quality.value)}
-                className={filters.routeQuality === quality.value ? 
-                  `${quality.color} text-white` : 
-                  "border-blue-300 text-blue-700 hover:bg-blue-100"
-                }
-              >
-                {quality.label}
-              </Button>
-            ))}
-          </div>
-          <p className="text-xs text-blue-600 mt-1">
-            Only drivers with established routes are shown
-          </p>
-        </div>
-
-        {/* Available Seats Filter */}
-        <div>
-          <h4 className="text-sm font-medium text-blue-900 mb-2">Minimum Available Seats</h4>
-          <div className="flex flex-wrap gap-2">
-            {[1, 2, 3, 4, 5].map((seats) => (
-              <Button
-                key={seats}
-                variant={filters.minAvailableSeats === seats ? "default" : "outline"}
-                size="sm"
-                onClick={() => handleFilterChange('minAvailableSeats', seats)}
-                className={filters.minAvailableSeats === seats ? 
-                  "bg-blue-600 text-white" : 
-                  "border-blue-300 text-blue-700 hover:bg-blue-100"
-                }
-              >
-                {seats}+ seats
-              </Button>
-            ))}
-          </div>
-        </div>
-
         {/* Vehicle Type Filter */}
         <div>
           <h4 className="text-sm font-medium text-blue-900 mb-2">Vehicle Type</h4>

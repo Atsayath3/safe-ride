@@ -10,7 +10,6 @@ import { Child } from '@/pages/parent/ParentDashboard';
 import { BookingService } from '@/services/bookingService';
 import { DriverAvailability } from '@/interfaces/booking';
 import DriverFilter, { DriverFilterOptions } from './DriverFilter';
-import RouteQualityWarningModal from './RouteQualityWarningModal';
 
 interface DriverSelectionModalProps {
   isOpen: boolean;
@@ -38,15 +37,8 @@ const DriverSelectionModal: React.FC<DriverSelectionModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<DriverFilterOptions>({
-    gender: null,
-    routeQuality: null,
-    minAvailableSeats: null,
     vehicleType: null
   });
-  
-  // Route quality warning modal state
-  const [showRouteWarning, setShowRouteWarning] = useState(false);
-  const [selectedDriverForWarning, setSelectedDriverForWarning] = useState<UserProfile | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -70,35 +62,26 @@ const DriverSelectionModal: React.FC<DriverSelectionModalProps> = ({
     });
     console.log('📍 After route filter:', filtered.length, 'drivers remaining');
 
-    // Gender filter
-    if (filters.gender) {
-      filtered = filtered.filter(driver => driver.gender === filters.gender);
-      console.log('👤 After gender filter:', filtered.length, 'drivers remaining');
-    }
-
-    // Route quality filter
-    if (filters.routeQuality) {
-      filtered = filtered.filter(driver => {
-        const compatibility = getRouteCompatibility(driver);
-        return compatibility.toLowerCase() === filters.routeQuality;
-      });
-      console.log('🛣️ After route quality filter:', filtered.length, 'drivers remaining');
-    }
-
-    // Available seats filter
-    if (filters.minAvailableSeats) {
-      filtered = filtered.filter(driver => {
-        const availability = driverAvailability[driver.uid];
-        return availability && availability.availableSeats >= (filters.minAvailableSeats || 0);
-      });
-      console.log('🪑 After seats filter:', filtered.length, 'drivers remaining');
-    }
-
     // Vehicle type filter
     if (filters.vehicleType) {
       filtered = filtered.filter(driver => driver.vehicle?.type === filters.vehicleType);
       console.log('🚗 After vehicle type filter:', filtered.length, 'drivers remaining');
     }
+
+    // Sort drivers: Excellent routes first, then Good routes
+    filtered = filtered.sort((a, b) => {
+      const compatibilityA = getRouteCompatibility(a);
+      const compatibilityB = getRouteCompatibility(b);
+      
+      const getRoutePriority = (compatibility: string) => {
+        if (compatibility === 'Excellent') return 1;
+        if (compatibility === 'Good') return 2;
+        return 3; // For any other compatibility (shouldn't happen after filtering)
+      };
+      
+      return getRoutePriority(compatibilityA) - getRoutePriority(compatibilityB);
+    });
+    console.log('🔄 Drivers sorted by route quality');
 
     console.log('✅ Final filtered drivers:', filtered.length);
     setFilteredDrivers(filtered);
@@ -106,9 +89,6 @@ const DriverSelectionModal: React.FC<DriverSelectionModalProps> = ({
 
   const clearFilters = () => {
     setFilters({
-      gender: null,
-      routeQuality: null,
-      minAvailableSeats: null,
       vehicleType: null
     });
   };
@@ -174,37 +154,9 @@ const DriverSelectionModal: React.FC<DriverSelectionModalProps> = ({
     return 'Poor';
   };
 
-  const handleDriverSelection = (driver: UserProfile) => {
-    const routeQuality = getRouteCompatibility(driver);
-    
-    // If route is excellent, proceed directly
-    if (routeQuality.toLowerCase() === 'excellent') {
-      onDriverSelect(driver);
-      return;
-    }
-    
-    // If route is good or fair, show warning modal
-    if (routeQuality.toLowerCase() === 'good' || routeQuality.toLowerCase() === 'fair') {
-      setSelectedDriverForWarning(driver);
-      setShowRouteWarning(true);
-      return;
-    }
-    
-    // Poor or unknown routes should not reach here due to filtering, but handle just in case
+  const handleDriverSelect = (driver: UserProfile) => {
+    console.log('🎯 Driver selected:', driver.firstName, driver.lastName);
     onDriverSelect(driver);
-  };
-
-  const handleRouteWarningContinue = () => {
-    if (selectedDriverForWarning) {
-      setShowRouteWarning(false);
-      onDriverSelect(selectedDriverForWarning);
-      setSelectedDriverForWarning(null);
-    }
-  };
-
-  const handleRouteWarningClose = () => {
-    setShowRouteWarning(false);
-    setSelectedDriverForWarning(null);
   };
 
   return (
@@ -271,7 +223,6 @@ const DriverSelectionModal: React.FC<DriverSelectionModalProps> = ({
             </div>
             {filteredDrivers.map((driver) => {
               const availability = driverAvailability[driver.uid];
-              const compatibility = getRouteCompatibility(driver);
               
               return (
                 <Card key={driver.uid} className="border border-border hover:shadow-md transition-shadow">
@@ -287,20 +238,8 @@ const DriverSelectionModal: React.FC<DriverSelectionModalProps> = ({
                         <div className="flex items-center justify-between">
                           <h3 className="font-semibold text-gray-900 text-lg">
                             {driver.firstName} {driver.lastName}
-                            {driver.gender && (
-                              <span className="ml-2 text-sm text-gray-600 font-normal">
-                                ({driver.gender})
-                              </span>
-                            )}
                           </h3>
                           <div className="flex gap-2">
-                            <Badge variant={compatibility === 'Excellent' ? 'default' : 
-                                           compatibility === 'Good' ? 'secondary' : 'outline'}
-                                   className={compatibility === 'Excellent' ? 'bg-green-600 text-white' :
-                                             compatibility === 'Good' ? 'bg-blue-600 text-white' : 
-                                             'bg-yellow-600 text-white'}>
-                              {compatibility} Route
-                            </Badge>
                             {driver.vehicle?.type && (
                               <Badge variant="outline" className="text-sm border-gray-400 text-gray-700">
                                 {driver.vehicle.type}
@@ -359,7 +298,7 @@ const DriverSelectionModal: React.FC<DriverSelectionModalProps> = ({
                         
                         <div className="flex items-center gap-2 pt-3">
                           <Button 
-                            onClick={() => handleDriverSelection(driver)}
+                            onClick={() => handleDriverSelect(driver)}
                             className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-md"
                             disabled={!availability || availability.availableSeats === 0}
                           >
@@ -375,18 +314,6 @@ const DriverSelectionModal: React.FC<DriverSelectionModalProps> = ({
           </div>
         )}
       </SheetContent>
-      
-      {/* Route Quality Warning Modal */}
-      {selectedDriverForWarning && (
-        <RouteQualityWarningModal
-          isOpen={showRouteWarning}
-          onClose={handleRouteWarningClose}
-          onContinue={handleRouteWarningContinue}
-          driver={selectedDriverForWarning}
-          child={child}
-          routeQuality={getRouteCompatibility(selectedDriverForWarning)}
-        />
-      )}
     </Sheet>
   );
 };
