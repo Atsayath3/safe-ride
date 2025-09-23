@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Filter, X } from 'lucide-react';
 
 export interface DriverFilterOptions {
+  gender?: 'male' | 'female' | 'other' | null;
   vehicleType?: 'van' | 'mini van' | 'school bus' | null;
 }
 
@@ -34,6 +35,8 @@ const DriverFilter: React.FC<DriverFilterProps> = ({
 
   const hasActiveFilters = getActiveFiltersCount() > 0;
 
+  console.log('🎯 DriverFilter rendering with filters:', filters);
+  
   return (
     <Card className={`border-blue-200 bg-blue-50 ${className}`}>
       <CardHeader className="pb-3">
@@ -60,28 +63,51 @@ const DriverFilter: React.FC<DriverFilterProps> = ({
           )}
         </div>
       </CardHeader>
+      
       <CardContent className="space-y-4">
         {/* Gender Filter */}
+        <div>
+          <h4 className="text-sm font-medium text-blue-900 mb-2">Gender</h4>
+          <div className="flex flex-wrap gap-2">
+            {['male', 'female', 'other'].map((gender) => {
+              console.log('🚹 Rendering gender button:', gender, 'selected:', filters.gender === gender);
+              return (
+                <Button
+                  key={gender}
+                  variant={filters.gender === gender ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => {
+                    console.log('🚹 Gender button clicked:', gender);
+                    handleFilterChange('gender', gender);
+                  }}
+                  className={filters.gender === gender ? 
+                    "bg-blue-600 text-white" : 
+                    "border-blue-300 text-blue-700 hover:bg-blue-100"
+                  }
+                >
+                  {gender.charAt(0).toUpperCase() + gender.slice(1)}
+                </Button>
+              );
+            })}
+          </div>
+        </div>
+
         {/* Vehicle Type Filter */}
         <div>
           <h4 className="text-sm font-medium text-blue-900 mb-2">Vehicle Type</h4>
           <div className="flex flex-wrap gap-2">
-            {[
-              { value: 'van', label: 'Van' },
-              { value: 'mini van', label: 'Mini Van' },
-              { value: 'school bus', label: 'School Bus' }
-            ].map((vehicle) => (
+            {['van', 'mini van', 'school bus'].map((type) => (
               <Button
-                key={vehicle.value}
-                variant={filters.vehicleType === vehicle.value ? "default" : "outline"}
+                key={type}
+                variant={filters.vehicleType === type ? "default" : "outline"}
                 size="sm"
-                onClick={() => handleFilterChange('vehicleType', vehicle.value)}
-                className={filters.vehicleType === vehicle.value ? 
+                onClick={() => handleFilterChange('vehicleType', type)}
+                className={filters.vehicleType === type ? 
                   "bg-blue-600 text-white" : 
                   "border-blue-300 text-blue-700 hover:bg-blue-100"
                 }
               >
-                {vehicle.label}
+                {type.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
               </Button>
             ))}
           </div>

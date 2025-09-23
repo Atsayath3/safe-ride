@@ -37,6 +37,7 @@ const DriverSelectionModal: React.FC<DriverSelectionModalProps> = ({
   const [loading, setLoading] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<DriverFilterOptions>({
+    gender: null,
     vehicleType: null
   });
 
@@ -68,6 +69,12 @@ const DriverSelectionModal: React.FC<DriverSelectionModalProps> = ({
       console.log('🚗 After vehicle type filter:', filtered.length, 'drivers remaining');
     }
 
+    // Gender filter
+    if (filters.gender) {
+      filtered = filtered.filter(driver => driver.gender === filters.gender);
+      console.log('👤 After gender filter:', filtered.length, 'drivers remaining');
+    }
+
     // Sort drivers: Excellent routes first, then Good routes
     filtered = filtered.sort((a, b) => {
       const compatibilityA = getRouteCompatibility(a);
@@ -89,6 +96,7 @@ const DriverSelectionModal: React.FC<DriverSelectionModalProps> = ({
 
   const clearFilters = () => {
     setFilters({
+      gender: null,
       vehicleType: null
     });
   };
