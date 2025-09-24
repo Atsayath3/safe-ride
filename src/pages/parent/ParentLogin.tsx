@@ -11,7 +11,16 @@ import { toast } from '@/hooks/use-toast';
 
 const ParentLogin = () => {
   const navigate = useNavigate();
-  const { loginWithRole, signup } = useAuth();
+  const authContext = useAuth();
+  const { login, signup } = authContext;
+  
+  // Debug: Check what functions are available
+  console.log('Auth functions available:', {
+    login: typeof login,
+    signup: typeof signup,
+    loginWithRole: typeof (authContext as any).loginWithRole,
+    allKeys: Object.keys(authContext)
+  });
   
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
@@ -56,7 +65,8 @@ const ParentLogin = () => {
     setLoading(true);
     try {
       if (isLogin) {
-        await loginWithRole(formData.email, formData.password, 'parent');
+        // Using the correct login function from AuthContext
+        await login(formData.email, formData.password);
         toast({
           title: "Welcome back!",
           description: "Successfully logged in to your parent account",
@@ -76,13 +86,10 @@ const ParentLogin = () => {
       let errorMessage = 'Authentication failed';
       switch (error.code) {
         case 'auth/user-not-found':
-          errorMessage = 'No parent account found with this email. Please sign up first.';
+          errorMessage = 'No account found with this email. Please sign up first.';
           break;
         case 'auth/wrong-password':
-          errorMessage = 'Invalid credentials. Try again!';
-          break;
-        case 'auth/invalid-credential':
-          errorMessage = 'Invalid credentials. Try again!';
+          errorMessage = 'Incorrect password. Please try again.';
           break;
         case 'auth/invalid-email':
           errorMessage = 'Invalid email address format.';

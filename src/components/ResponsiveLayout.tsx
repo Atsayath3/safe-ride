@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Menu, Bell, User, Home, Calendar, Settings, Car, Users } from 'lucide-react';
+import { ArrowLeft, Menu, Bell, User, Home, Calendar, Settings, Car, Users, DollarSign, Star, Shield } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -76,6 +76,24 @@ const ResponsiveLayout: React.FC<ResponsiveLayoutProps> = ({
             label: 'Rides',
             path: 'rides',
             active: currentTab === 'rides'
+          },
+          {
+            icon: <Users className="w-5 h-5" />,
+            label: 'Sibling Groups',
+            path: 'siblings',
+            active: currentTab === 'siblings'
+          },
+          {
+            icon: <DollarSign className="w-5 h-5" />,
+            label: 'Budget Tracking',
+            path: 'budget',
+            active: currentTab === 'budget'
+          },
+          {
+            icon: <Star className="w-5 h-5" />,
+            label: 'Trusted Drivers',
+            path: 'drivers',
+            active: currentTab === 'drivers'
           },
           {
             icon: <User className="w-5 h-5" />,
@@ -238,7 +256,89 @@ const ResponsiveLayout: React.FC<ResponsiveLayoutProps> = ({
         {/* Navigation */}
         <nav className="flex-1 p-4">
           <ul className="space-y-2">
-            {navigationItems.map((item, index) => (
+            {/* Main Navigation */}
+            {navigationItems.slice(0, 2).map((item, index) => (
+              <li key={index}>
+                <button
+                  onClick={() => {
+                    if (theme === 'parent' && onTabChange) {
+                      onTabChange(item.path);
+                    } else {
+                      navigate(item.path);
+                    }
+                  }}
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
+                    item.active
+                      ? `${themeColors.secondary} ${themeColors.text} border ${themeColors.border}`
+                      : 'text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  {item.icon}
+                  <span className="font-medium">{item.label}</span>
+                </button>
+              </li>
+            ))}
+            
+            {/* Personalization Section - Only for Parent */}
+            {theme === 'parent' && navigationItems.length > 3 && (
+              <>
+                <li className="pt-4 pb-2">
+                  <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-4">
+                    Personalization
+                  </h3>
+                </li>
+                {navigationItems.slice(2, -1).map((item, index) => (
+                  <li key={`personalization-${index}`}>
+                    <button
+                      onClick={() => {
+                        if (theme === 'parent' && onTabChange) {
+                          onTabChange(item.path);
+                        } else {
+                          navigate(item.path);
+                        }
+                      }}
+                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
+                        item.active
+                          ? `${themeColors.secondary} ${themeColors.text} border ${themeColors.border}`
+                          : 'text-gray-600 hover:bg-gray-50'
+                      }`}
+                    >
+                      {item.icon}
+                      <span className="font-medium">{item.label}</span>
+                    </button>
+                  </li>
+                ))}
+                
+                <li className="pt-4 pb-2">
+                  <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider px-4">
+                    Account
+                  </h3>
+                </li>
+                {/* Profile Section */}
+                <li>
+                  <button
+                    onClick={() => {
+                      if (theme === 'parent' && onTabChange) {
+                        onTabChange(navigationItems[navigationItems.length - 1].path);
+                      } else {
+                        navigate(navigationItems[navigationItems.length - 1].path);
+                      }
+                    }}
+                    className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
+                      navigationItems[navigationItems.length - 1].active
+                        ? `${themeColors.secondary} ${themeColors.text} border ${themeColors.border}`
+                        : 'text-gray-600 hover:bg-gray-50'
+                    }`}
+                  >
+                    {navigationItems[navigationItems.length - 1].icon}
+                    <span className="font-medium">{navigationItems[navigationItems.length - 1].label}</span>
+                  </button>
+                </li>
+              </>
+            )}
+            
+            {/* Other themes - show all items normally */}
+            {theme !== 'parent' && navigationItems.map((item, index) => (
               <li key={index}>
                 <button
                   onClick={() => {

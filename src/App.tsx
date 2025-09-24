@@ -5,7 +5,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import AnimatedBackground from "@/components/AnimatedBackground";
-import ProtectedRoute from "@/components/ProtectedRoute";
 
 // Pages
 import Index from "./pages/Index";
@@ -31,134 +30,48 @@ import AddChild from "./pages/parent/AddChild";
 import AddChildLocations from "./pages/parent/AddChildLocations";
 import EditChild from "./pages/parent/EditChild";
 import ParentProfileSetup from "./pages/parent/ParentProfileSetup";
-import DatabaseStatus from "./components/DatabaseStatus";
-import StorageRulesTester from "./components/test/StorageRulesTester";
-import BookingDiagnosticSimple from "./components/test/BookingDiagnosticSimple";
-import QuickDriverFixer from "./components/test/QuickDriverFixer";
-import BookingFlowDebugger from "./components/test/BookingFlowDebugger";
+import { PersonalizationPage } from "./pages/parent/PersonalizationPage";
 
 const queryClient = new QueryClient();
 
-const App = () => {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <TooltipProvider>
-          <AnimatedBackground />
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <AuthProvider>
+      <TooltipProvider>
+        <AnimatedBackground />
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
           <Routes>
             <Route path="/" element={<Welcome />} />
             <Route path="/landing" element={<Index />} />
             
-            {/* Development Tools - Only available in development */}
-            <Route path="/dev/cleanup" element={<DatabaseStatus />} />
-            
             {/* Driver Routes */}
             <Route path="/driver/login" element={<DriverLogin />} />
-            <Route path="/driver/profile-setup" element={
-              <ProtectedRoute requiredRole="driver">
-                <ProfileSetup />
-              </ProtectedRoute>
-            } />
-            <Route path="/driver/city-selection" element={
-              <ProtectedRoute requiredRole="driver">
-                <CitySelection />
-              </ProtectedRoute>
-            } />
-            <Route path="/driver/vehicle-setup" element={
-              <ProtectedRoute requiredRole="driver">
-                <VehicleSetup />
-              </ProtectedRoute>
-            } />
-            <Route path="/driver/route-setup" element={
-              <ProtectedRoute requiredRole="driver">
-                <RouteSetup />
-              </ProtectedRoute>
-            } />
-            <Route path="/driver/welcome" element={
-              <ProtectedRoute requiredRole="driver">
-                <DriverWelcome />
-              </ProtectedRoute>
-            } />
-            <Route path="/driver/upload/:documentType" element={
-              <ProtectedRoute requiredRole="driver">
-                <DocumentUpload />
-              </ProtectedRoute>
-            } />
-            <Route path="/driver/dashboard" element={
-              <ProtectedRoute requiredRole="driver">
-                <DriverDashboard />
-              </ProtectedRoute>
-            } />
-            <Route path="/driver/routes" element={
-              <ProtectedRoute requiredRole="driver">
-                <RouteSetup />
-              </ProtectedRoute>
-            } />
-            <Route path="/driver/profile" element={
-              <ProtectedRoute requiredRole="driver">
-                <DriverProfile />
-              </ProtectedRoute>
-            } />
-            <Route path="/driver/rides" element={
-              <ProtectedRoute requiredRole="driver">
-                <DriverRides />
-              </ProtectedRoute>
-            } />
-            <Route path="/driver/requests" element={
-              <ProtectedRoute requiredRole="driver">
-                <DriverRequests />
-              </ProtectedRoute>
-            } />
-            <Route path="/driver/bookings" element={
-              <ProtectedRoute requiredRole="driver">
-                <BookingManagement />
-              </ProtectedRoute>
-            } />
+            <Route path="/driver/profile-setup" element={<ProfileSetup />} />
+            <Route path="/driver/city-selection" element={<CitySelection />} />
+            <Route path="/driver/vehicle-setup" element={<VehicleSetup />} />
+            <Route path="/driver/welcome" element={<DriverWelcome />} />
+            <Route path="/driver/upload/:documentType" element={<DocumentUpload />} />
+            <Route path="/driver/dashboard" element={<DriverDashboard />} />
+            <Route path="/driver/routes" element={<RouteSetup />} />
+            <Route path="/driver/profile" element={<DriverProfile />} />
+            <Route path="/driver/rides" element={<DriverRides />} />
+            <Route path="/driver/requests" element={<DriverRequests />} />
+            <Route path="/driver/bookings" element={<BookingManagement />} />
             
             {/* Parent Routes */}
             <Route path="/parent/login" element={<ParentLogin />} />
-            <Route path="/parent/profile-setup" element={
-              <ProtectedRoute requiredRole="parent">
-                <ParentProfileSetup />
-              </ProtectedRoute>
-            } />
-            <Route path="/parent/dashboard" element={
-              <ProtectedRoute requiredRole="parent">
-                <ParentDashboard />
-              </ProtectedRoute>
-            } />
-            <Route path="/parent/add-child" element={
-              <ProtectedRoute requiredRole="parent">
-                <AddChild />
-              </ProtectedRoute>
-            } />
-            <Route path="/parent/add-child/locations" element={
-              <ProtectedRoute requiredRole="parent">
-                <AddChildLocations />
-              </ProtectedRoute>
-            } />
-            <Route path="/parent/edit-child/:childId" element={
-              <ProtectedRoute requiredRole="parent">
-                <EditChild />
-              </ProtectedRoute>
-            } />
-            
-            {/* Testing Routes */}
-            <Route path="/test/storage-rules" element={<StorageRulesTester />} />
-            <Route path="/test/booking-diagnostic" element={<BookingDiagnosticSimple />} />
-            <Route path="/test/fix-drivers" element={<QuickDriverFixer />} />
-            <Route path="/test/booking-flow" element={<BookingFlowDebugger />} />
+            <Route path="/parent/profile-setup" element={<ParentProfileSetup />} />
+            <Route path="/parent/dashboard" element={<ParentDashboard />} />
+            <Route path="/parent/add-child" element={<AddChild />} />
+            <Route path="/parent/add-child/locations" element={<AddChildLocations />} />
+            <Route path="/parent/edit-child/:childId" element={<EditChild />} />
+            <Route path="/parent/personalization" element={<PersonalizationPage />} />
             
             {/* Admin Routes */}
             <Route path="/admin/login" element={<AdminLogin />} />
-            <Route path="/admin/dashboard" element={
-              <ProtectedRoute requiredRole="admin">
-                <AdminDashboard />
-              </ProtectedRoute>
-            } />
+            <Route path="/admin/dashboard" element={<AdminDashboard />} />
             
             <Route path="*" element={<NotFound />} />
           </Routes>
@@ -166,7 +79,6 @@ const App = () => {
       </TooltipProvider>
     </AuthProvider>
   </QueryClientProvider>
-  );
-};
+);
 
 export default App;

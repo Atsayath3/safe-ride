@@ -12,6 +12,18 @@ import {
 import { doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 
+  // Debug logging
+  console.log('AuthContext functions available:', {
+    login: typeof login,
+    signup: typeof signup,
+    logout: typeof logout,
+    loginWithRole: typeof (value as any)?.loginWithRole
+  });
+  ConfirmationResult
+} from 'firebase/auth';
+import { doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs } from 'firebase/firestore';
+import { auth, db } from '@/lib/firebase';
+
 export interface UserProfile {
   uid: string;
   email?: string;
@@ -93,92 +105,104 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       createdAt: new Date()
     };
 
-    if (role === 'driver') {
-      await setDoc(doc(db, 'drivers', user.uid), profile);
-    } else if (role === 'parent') {
-      await setDoc(doc(db, 'parents', user.uid), profile);
-    } else if (role === 'admin') {
-      await setDoc(doc(db, 'admins', user.uid), profile);
-    }
+      if (role === 'driver') {
+        await setDoc(doc(db, 'drivers', user.uid), profile);
+      } else if (role === 'parent') {
+        await setDoc(doc(db, 'parents', user.uid), profile);
+      } else if (role === 'admin') {
+        await setDoc(doc(db, 'admins', user.uid), profile);
+      }
   };
 
   const logout = async () => {
-    await signOut(auth);
-    setUserProfile(null);
-  };
-
-  const sendPhoneOTP = async (phoneNumber: string): Promise<ConfirmationResult> => {
-    // Ensure the recaptcha container exists
-    const recaptchaContainer = document.getElementById('recaptcha-container');
-    if (!recaptchaContainer) {
-      throw new Error('Recaptcha container not found');
-    }
-
-    const recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
-      size: 'invisible',
-      callback: () => {
-        console.log('Recaptcha resolved');
-      }
-    });
-
-    return signInWithPhoneNumber(auth, phoneNumber, recaptchaVerifier);
-  };
-
-  const verifyOTP = async (confirmationResult: ConfirmationResult, otp: string) => {
-    const { user } = await confirmationResult.confirm(otp);
-    
-    // Check if this is a new user or existing user
-    const existingProfile = await fetchUserProfile(user.uid);
-    if (!existingProfile) {
-      // Create a new profile for phone-verified user
-      const profile: UserProfile = {
-        uid: user.uid,
-        phone: user.phoneNumber || undefined,
-        role: 'driver', // Default for phone signup
-        status: 'pending',
-        profileComplete: false,
-        createdAt: new Date()
-      };
-      await setDoc(doc(db, 'drivers', user.uid), profile);
+    try {
+      await signOut(auth);
+      // Clear user profile state
+      setUserProfile(null);
+      setCurrentUser(null);
+    } catch (error) {
+      console.error('Logout error:', error);
+      throw error;
     }
   };
 
   const checkExistingDriver = async (phoneNumber: string): Promise<UserProfile | null> => {
-    const driversQuery = query(
-      collection(db, 'drivers'),
-      where('phone', '==', phoneNumber)
-    );
+    const usersRef = collection(db, 'drivers');
+    const q = query(usersRef, where('phone', '==', phoneNumber));
+    const querySnapshot = await getDocs(q);
     
-    const snapshot = await getDocs(driversQuery);
-    if (!snapshot.empty) {
-      const driverDoc = snapshot.docs[0];
+    if (!querySnapshot.empty) {
+      const doc = querySnapshot.docs[0];
+      const data = doc.data();
       return {
-        ...driverDoc.data(),
-        createdAt: driverDoc.data().createdAt?.toDate() || new Date()
+        ...data,
+        createdAt: data.createdAt?.toDate() || new Date()
       } as UserProfile;
     }
     
     return null;
   };
 
-  const updateUserProfile = async (data: Partial<UserProfile>) => {
-    if (!currentUser || !userProfile) return;
+  const sendPhoneOTP = async (phoneNumber: string): Promise<ConfirmationResult> => {
+    try {
+      // Clear any existing reCAPTCHA
+      const container = document.getElementById('recaptcha-container');
+      if (container) {
+        container.innerHTML = '';
+      }
+
+      const recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+        size: 'invisible',
+        callback: () => {
+          // reCAPTCHA solved
+        },
+        'expired-callback': () => {
+          // Response expired. Ask user to solve reCAPTCHA again.
+        }
+      });
+
+      await recaptchaVerifier.render();
+      return await signInWithPhoneNumber(auth, phoneNumber, recaptchaVerifier);
+    } catch (error: any) {
+      console.error('Phone OTP Error:', error);
+      throw new Error(error.message || 'Failed to send OTP');
+    }
+  };
+
+  const verifyOTP = async (confirmationResult: ConfirmationResult, otp: string) => {
+    const result = await confirmationResult.confirm(otp);
     
+    // Check if user profile exists for this phone number
+    const existingProfile = await checkExistingDriver(result.user.phoneNumber || '');
+    
+    if (existingProfile) {
+      // Update the existing profile with the new Firebase UID
+      await updateDoc(doc(db, 'drivers', existingProfile.uid), {
+        uid: result.user.uid
+      });
+      
+      // Update the document ID to match the new UID
+      await setDoc(doc(db, 'drivers', result.user.uid), {
+        ...existingProfile,
+        uid: result.user.uid
+      });
+    }
+  };
+
+  const updateUserProfile = async (data: Partial<UserProfile>) => {
+    if (!currentUser) throw new Error('No current user');
+    if (!userProfile) throw new Error('No user profile loaded');
+    
+    // Determine the correct collection based on user role
     const collection = userProfile.role === 'driver' ? 'drivers' : 
-                     userProfile.role === 'parent' ? 'parents' : 
-                     userProfile.role === 'admin' ? 'admins' : 'users';
+                      userProfile.role === 'parent' ? 'parents' : 'users';
     
     const docRef = doc(db, collection, currentUser.uid);
-    await updateDoc(docRef, {
-      ...data,
-      updatedAt: new Date()
-    });
+    await updateDoc(docRef, data);
     
     // Update local state
     setUserProfile(prev => prev ? { ...prev, ...data } : null);
-  };
-
-  const fetchUserProfile = async (uid: string) => {
+  };  const fetchUserProfile = async (uid: string) => {
     // Try different collections based on user role
     const collections = ['drivers', 'parents', 'users', 'admins'];
     
@@ -188,34 +212,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (docSnap.exists()) {
         const data = docSnap.data();
-        return {
+        setUserProfile({
           ...data,
-          createdAt: data.createdAt?.toDate() || new Date(),
-          rejectedAt: data.rejectedAt?.toDate(),
-          approvedAt: data.approvedAt?.toDate()
-        } as UserProfile;
+          createdAt: data.createdAt?.toDate() || new Date()
+        } as UserProfile);
+        return;
       }
     }
-    return null;
+    
+    // If no profile exists in any collection, create a basic one in users
+    const basicProfile: UserProfile = {
+      uid,
+      role: 'driver',
+      profileComplete: false,
+      createdAt: new Date()
+    };
+    const docRef = doc(db, 'users', uid);
+    await setDoc(docRef, basicProfile);
+    setUserProfile(basicProfile);
   };
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      setCurrentUser(user);
+      
       if (user) {
-        setCurrentUser(user);
-        const profile = await fetchUserProfile(user.uid);
-        setUserProfile(profile);
+        await fetchUserProfile(user.uid);
       } else {
-        setCurrentUser(null);
         setUserProfile(null);
       }
+      
       setLoading(false);
     });
 
     return unsubscribe;
   }, []);
 
-  const value = {
+  const value: AuthContextType = {
     currentUser,
     userProfile,
     loading,

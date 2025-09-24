@@ -11,7 +11,10 @@ import { Truck, Mail, Lock, Eye, EyeOff, AlertTriangle, Shield, ArrowLeft } from
 
 const DriverLogin = () => {
   const navigate = useNavigate();
-  const { loginWithRole, signup } = useAuth();
+  const { login, signup } = useAuth();
+  
+  // Debug: Log what functions are available
+  console.log('DriverLogin useAuth result:', { login, signup, typeof_login: typeof login, typeof_signup: typeof signup });
   
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
@@ -51,13 +54,15 @@ const DriverLogin = () => {
     setLoading(true);
     try {
       if (isLogin) {
-        await loginWithRole(formData.email, formData.password, 'driver');
+        console.log('About to call login function:', { login, email: formData.email });
+        await login(formData.email, formData.password);
         toast({
           title: "Welcome back!",
           description: "Successfully logged in to your driver account",
         });
         navigate('/driver/dashboard');
       } else {
+        console.log('About to call signup function:', { signup, email: formData.email });
         await signup(formData.email, formData.password, 'driver');
         toast({
           title: "Account created!",
@@ -71,13 +76,10 @@ const DriverLogin = () => {
       let errorMessage = 'Authentication failed';
       switch (error.code) {
         case 'auth/user-not-found':
-          errorMessage = 'No driver account found with this email. Please sign up first.';
+          errorMessage = 'No account found with this email. Please sign up first.';
           break;
         case 'auth/wrong-password':
-          errorMessage = 'Invalid credentials. Try again!';
-          break;
-        case 'auth/invalid-credential':
-          errorMessage = 'Invalid credentials. Try again!';
+          errorMessage = 'Incorrect password. Please try again.';
           break;
         case 'auth/invalid-email':
           errorMessage = 'Invalid email address format.';

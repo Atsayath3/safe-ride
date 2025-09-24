@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { collection, query, where, getDocs, doc, deleteDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { useNavigate } from 'react-router-dom';
-import { Plus, Home, Car, User } from 'lucide-react';
+import { Plus, Home, Car, User, Users, DollarSign, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -23,6 +23,9 @@ import { LogOut } from 'lucide-react';
 import { RideService } from '@/services/rideService';
 import { BookingCleanupService } from '@/services/bookingCleanupService';
 import { ActiveRide } from '@/interfaces/ride';
+import { SiblingCoordination } from '@/components/parent/SiblingCoordination';
+import { BudgetTracking } from '@/components/parent/BudgetTracking';
+import { TrustedDriverNetwork } from '@/components/parent/TrustedDriverNetwork';
 
 export interface Child {
   id: string;
@@ -298,40 +301,82 @@ const ParentDashboard = () => {
 
                 {/* Children Cards */}
                 {children.length > 0 ? (
-                  <div className="grid gap-4">
-                    {children.map((child) => (
-                      <EnhancedChildCard 
-                        key={child.id} 
-                        child={child} 
-                        onBookNewRide={() => handleBookNewRide(child)}
-                        onEditChild={handleEditChildDirect}
-                        onDeleteChild={handleDeleteChildDirect}
-                        onRefresh={() => {
-                          // Refresh function for real-time updates
-                          const fetchChildren = async () => {
-                            if (!currentUser) return;
-                            const q = query(collection(db, 'children'), where('parentId', '==', currentUser.uid));
-                            const querySnapshot = await getDocs(q);
-                            const childrenList: Child[] = querySnapshot.docs.map(docSnap => {
-                              const data = docSnap.data();
-                              return {
-                                id: docSnap.id,
-                                fullName: data.fullName,
-                                dateOfBirth: data.dateOfBirth?.toDate ? data.dateOfBirth.toDate() : data.dateOfBirth,
-                                gender: data.gender,
-                                schoolName: data.schoolName,
-                                schoolLocation: data.schoolLocation,
-                                tripStartLocation: data.pickupLocation || data.tripStartLocation,
-                                studentId: data.studentId,
-                                avatar: data.avatar || undefined,
-                              };
-                            });
-                            setChildren(childrenList);
-                          };
-                          fetchChildren();
-                        }}
-                      />
-                    ))}
+                  <div className="space-y-6">
+                    <div className="grid gap-4">
+                      {children.map((child) => (
+                        <EnhancedChildCard 
+                          key={child.id} 
+                          child={child} 
+                          onBookNewRide={() => handleBookNewRide(child)}
+                          onEditChild={handleEditChildDirect}
+                          onDeleteChild={handleDeleteChildDirect}
+                          onRefresh={() => {
+                            // Refresh function for real-time updates
+                            const fetchChildren = async () => {
+                              if (!currentUser) return;
+                              const q = query(collection(db, 'children'), where('parentId', '==', currentUser.uid));
+                              const querySnapshot = await getDocs(q);
+                              const childrenList: Child[] = querySnapshot.docs.map(docSnap => {
+                                const data = docSnap.data();
+                                return {
+                                  id: docSnap.id,
+                                  fullName: data.fullName,
+                                  dateOfBirth: data.dateOfBirth?.toDate ? data.dateOfBirth.toDate() : data.dateOfBirth,
+                                  gender: data.gender,
+                                  schoolName: data.schoolName,
+                                  schoolLocation: data.schoolLocation,
+                                  tripStartLocation: data.pickupLocation || data.tripStartLocation,
+                                  studentId: data.studentId,
+                                  avatar: data.avatar || undefined,
+                                };
+                              });
+                              setChildren(childrenList);
+                            };
+                            fetchChildren();
+                          }}
+                        />
+                      ))}
+                    </div>
+
+                    {/* Personalization Features Overview */}
+                    <div className="bg-white rounded-2xl p-6 shadow-lg border border-blue-100">
+                      <h3 className="font-nunito font-semibold text-lg text-blue-900 mb-4">Personalization Features</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <Button
+                          variant="outline"
+                          onClick={() => setCurrentTab('siblings')}
+                          className="h-auto p-4 flex flex-col items-center gap-2 border-blue-200 hover:bg-blue-50"
+                        >
+                          <Users className="w-6 h-6 text-blue-600" />
+                          <div className="text-center">
+                            <p className="font-medium text-blue-900">Sibling Groups</p>
+                            <p className="text-xs text-blue-600">Coordinate group rides</p>
+                          </div>
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => setCurrentTab('budget')}
+                          className="h-auto p-4 flex flex-col items-center gap-2 border-green-200 hover:bg-green-50"
+                        >
+                          <DollarSign className="w-6 h-6 text-green-600" />
+                          <div className="text-center">
+                            <p className="font-medium text-green-900">Budget Tracking</p>
+                            <p className="text-xs text-green-600">Monitor spending</p>
+                          </div>
+                        </Button>
+                        <Button
+                          variant="outline"
+                          onClick={() => setCurrentTab('drivers')}
+                          className="h-auto p-4 flex flex-col items-center gap-2 border-yellow-200 hover:bg-yellow-50"
+                        >
+                          <Star className="w-6 h-6 text-yellow-600" />
+                          <div className="text-center">
+                            <p className="font-medium text-yellow-900">Trusted Drivers</p>
+                            <p className="text-xs text-yellow-600">Manage driver network</p>
+                          </div>
+                        </Button>
+                      </div>
+                    </div>
                   </div>
                 ) : (
                   <Card className="border-2 border-dashed border-blue-200 bg-blue-50">
@@ -438,6 +483,35 @@ const ParentDashboard = () => {
                     </Button>
                   </CardContent>
                 </Card>
+              </TabsContent>
+
+              {/* Sibling Coordination Tab */}
+              <TabsContent value="siblings" className="h-full m-0 p-4 space-y-6">
+                <SiblingCoordination 
+                  parentId={currentUser?.uid || ''} 
+                  children={children.map(child => ({
+                    id: child.id,
+                    name: child.fullName,
+                    school: child.schoolName
+                  }))}
+                />
+              </TabsContent>
+
+              {/* Budget Tracking Tab */}
+              <TabsContent value="budget" className="h-full m-0 p-4 space-y-6">
+                <BudgetTracking 
+                  parentId={currentUser?.uid || ''}
+                  children={children.map(child => ({
+                    id: child.id,
+                    name: child.fullName,
+                    school: child.schoolName
+                  }))}
+                />
+              </TabsContent>
+
+              {/* Trusted Drivers Tab */}
+              <TabsContent value="drivers" className="h-full m-0 p-4 space-y-6">
+                <TrustedDriverNetwork parentId={currentUser?.uid || ''} />
               </TabsContent>
             </div>
           </Tabs>

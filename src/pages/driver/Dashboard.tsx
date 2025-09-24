@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import ResponsiveLayout from '@/components/ResponsiveLayout';
 import ActiveRideTracker from '@/components/driver/ActiveRideTracker';
-import RideCancellationModal from '@/components/driver/RideCancellationModal';
+import EmergencyContactModal from '@/components/driver/EmergencyContactModal';
 import NotificationBell from '@/components/NotificationBell';
 import { MapPin, Clock, Users, Settings, Calendar, Play, Route, AlertTriangle } from 'lucide-react';
 import { doc, updateDoc, getDoc, setDoc } from 'firebase/firestore';
@@ -23,7 +23,7 @@ const DriverDashboard = () => {
   const [loading, setLoading] = useState(false);
   const [activeRide, setActiveRide] = useState<ActiveRide | null>(null);
   const [startingRide, setStartingRide] = useState(false);
-  const [showCancellationModal, setShowCancellationModal] = useState(false);
+  const [showEmergencyModal, setShowEmergencyModal] = useState(false);
 
   useEffect(() => {
     if (userProfile?.uid) {
@@ -440,6 +440,23 @@ const DriverDashboard = () => {
               </Card>
             </div>
 
+            {/* Emergency SOS Button */}
+            <Card className="border-red-300 bg-gradient-to-r from-red-50 to-red-100 shadow-lg">
+              <CardContent className="p-4">
+                <Button
+                  onClick={() => setShowEmergencyModal(true)}
+                  className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-6 text-lg shadow-lg"
+                  size="lg"
+                >
+                  <AlertTriangle className="h-6 w-6 mr-3 animate-pulse" />
+                  🚨 EMERGENCY SOS
+                </Button>
+                <p className="text-xs text-red-700 text-center mt-2 font-medium">
+                  Tap for immediate emergency assistance
+                </p>
+              </CardContent>
+            </Card>
+
             {/* Ride Management */}
             {userProfile?.status === 'approved' && (
               <Card className="border-red-200 shadow-lg bg-white">
@@ -453,15 +470,6 @@ const DriverDashboard = () => {
                   <p className="text-sm text-gray-600">
                     Manage your scheduled rides and inform parents about cancellations.
                   </p>
-                  
-                  <Button
-                    onClick={() => setShowCancellationModal(true)}
-                    variant="outline"
-                    className="w-full border-red-300 text-red-700 hover:bg-red-50 hover:border-red-400"
-                  >
-                    <AlertTriangle className="w-4 h-4 mr-2" />
-                    Cancel Rides for a Day
-                  </Button>
                 </CardContent>
               </Card>
             )}
@@ -480,9 +488,9 @@ const DriverDashboard = () => {
     </ResponsiveLayout>
     
     {/* Modals */}
-    <RideCancellationModal
-      isOpen={showCancellationModal}
-      onClose={() => setShowCancellationModal(false)}
+    <EmergencyContactModal
+      isOpen={showEmergencyModal}
+      onClose={() => setShowEmergencyModal(false)}
     />
     </div>
   );
