@@ -3,6 +3,7 @@ import {
   doc, 
   addDoc, 
   updateDoc, 
+  deleteDoc,
   getDocs, 
   getDoc,
   query, 
@@ -19,6 +20,14 @@ export class BudgetTrackingService {
   // Create budget limit for a child
   static async createBudgetLimit(budgetData: Omit<BudgetLimit, 'id' | 'createdAt' | 'updatedAt'>): Promise<string> {
     try {
+      // Validate required fields
+      if (!budgetData.childId || budgetData.childId.trim() === '') {
+        throw new Error('childId is required for budget limit creation');
+      }
+      if (!budgetData.parentId || budgetData.parentId.trim() === '') {
+        throw new Error('parentId is required for budget limit creation');
+      }
+
       const docRef = await addDoc(collection(db, 'budgetLimits'), {
         ...budgetData,
         createdAt: Timestamp.now(),
@@ -34,20 +43,37 @@ export class BudgetTrackingService {
   // Get budget limits for parent's children
   static async getBudgetLimits(parentId: string): Promise<BudgetLimit[]> {
     try {
+      // Simplified query - only filter by parentId to avoid composite index requirement
       const q = query(
         collection(db, 'budgetLimits'),
-        where('parentId', '==', parentId),
-        where('isActive', '==', true),
-        orderBy('createdAt', 'desc')
+        where('parentId', '==', parentId)
       );
       
       const snapshot = await getDocs(q);
-      return snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        createdAt: doc.data().createdAt.toDate(),
-        updatedAt: doc.data().updatedAt.toDate()
-      } as BudgetLimit));
+      const allLimits = snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          childId: data.childId || '',
+          parentId: data.parentId || '',
+          monthlyLimit: data.monthlyLimit || 0,
+          currentSpent: data.currentSpent || 0,
+          warningThreshold: data.warningThreshold || 80,
+          isActive: data.isActive !== undefined ? data.isActive : true,
+          notifications: data.notifications || {
+            warningEnabled: true,
+            limitReachedEnabled: true,
+            weeklyReportEnabled: false
+          },
+          createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(),
+          updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : new Date()
+        } as BudgetLimit;
+      });
+      
+      // Filter active limits and sort in memory
+      return allLimits
+        .filter(limit => limit.isActive)
+        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
     } catch (error) {
       console.error('Error fetching budget limits:', error);
       throw error;
@@ -67,11 +93,22 @@ export class BudgetTrackingService {
       if (snapshot.empty) return null;
       
       const doc = snapshot.docs[0];
+      const data = doc.data();
       return {
         id: doc.id,
-        ...doc.data(),
-        createdAt: doc.data().createdAt.toDate(),
-        updatedAt: doc.data().updatedAt.toDate()
+        childId: data.childId || '',
+        parentId: data.parentId || '',
+        monthlyLimit: data.monthlyLimit || 0,
+        currentSpent: data.currentSpent || 0,
+        warningThreshold: data.warningThreshold || 80,
+        isActive: data.isActive !== undefined ? data.isActive : true,
+        notifications: data.notifications || {
+          warningEnabled: true,
+          limitReachedEnabled: true,
+          weeklyReportEnabled: false
+        },
+        createdAt: data.createdAt?.toDate ? data.createdAt.toDate() : new Date(),
+        updatedAt: data.updatedAt?.toDate ? data.updatedAt.toDate() : new Date()
       } as BudgetLimit;
     } catch (error) {
       console.error('Error fetching budget limit for child:', error);
@@ -89,6 +126,17 @@ export class BudgetTrackingService {
       });
     } catch (error) {
       console.error('Error updating budget limit:', error);
+      throw error;
+    }
+  }
+
+  // Delete budget limit
+  static async deleteBudgetLimit(budgetId: string): Promise<void> {
+    try {
+      const budgetRef = doc(db, 'budgetLimits', budgetId);
+      await deleteDoc(budgetRef);
+    } catch (error) {
+      console.error('Error deleting budget limit:', error);
       throw error;
     }
   }
@@ -161,6 +209,10 @@ export class BudgetTrackingService {
     }
     
     // Create new monthly expense record
+    if (!childId || childId.trim() === '') {
+      throw new Error('Invalid childId provided for monthly expense creation');
+    }
+    
     const child = await getDoc(doc(db, 'children', childId));
     const childData = child.data();
     
@@ -190,14 +242,25 @@ export class BudgetTrackingService {
       );
       
       const snapshot = await getDocs(q);
-      const expenses = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        expenses: doc.data().expenses.map((exp: any) => ({
-          ...exp,
-          date: exp.date.toDate()
-        }))
-      } as MonthlyExpense));
+      const expenses = snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          childId: data.childId || '',
+          parentId: data.parentId || '',
+          month: data.month || '',
+          totalAmount: data.totalAmount || 0,
+          rideCount: data.rideCount || 0,
+          averageCostPerRide: data.averageCostPerRide || 0,
+          expenses: (data.expenses || []).map((exp: any) => ({
+            rideId: exp.rideId || '',
+            amount: exp.amount || 0,
+            date: exp.date?.toDate ? exp.date.toDate() : new Date(),
+            driverName: exp.driverName || 'Unknown',
+            route: exp.route || 'Unknown'
+          }))
+        } as MonthlyExpense;
+      });
       
       return expenses.slice(0, months);
     } catch (error) {
@@ -209,25 +272,42 @@ export class BudgetTrackingService {
   // Get all monthly expenses for parent
   static async getAllMonthlyExpenses(parentId: string, month?: string): Promise<MonthlyExpense[]> {
     try {
-      let q = query(
+      // Simplified query - only filter by parentId to avoid composite index requirement
+      const q = query(
         collection(db, 'monthlyExpenses'),
-        where('parentId', '==', parentId),
-        orderBy('month', 'desc')
+        where('parentId', '==', parentId)
       );
       
+      const snapshot = await getDocs(q);
+      let expenses = snapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          childId: data.childId || '',
+          parentId: data.parentId || '',
+          month: data.month || '',
+          totalAmount: data.totalAmount || 0,
+          rideCount: data.rideCount || 0,
+          averageCostPerRide: data.averageCostPerRide || 0,
+          expenses: (data.expenses || []).map((exp: any) => ({
+            rideId: exp.rideId || '',
+            amount: exp.amount || 0,
+            date: exp.date?.toDate ? exp.date.toDate() : new Date(),
+            driverName: exp.driverName || 'Unknown',
+            route: exp.route || 'Unknown'
+          }))
+        } as MonthlyExpense;
+      });
+      
+      // Filter by month and sort in memory
       if (month) {
-        q = query(q, where('month', '==', month));
+        expenses = expenses.filter(expense => expense.month === month);
       }
       
-      const snapshot = await getDocs(q);
-      return snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data(),
-        expenses: doc.data().expenses.map((exp: any) => ({
-          ...exp,
-          date: exp.date.toDate()
-        }))
-      } as MonthlyExpense));
+      // Sort by month in descending order
+      expenses.sort((a, b) => b.month.localeCompare(a.month));
+      
+      return expenses;
     } catch (error) {
       console.error('Error fetching all monthly expenses:', error);
       throw error;
@@ -326,8 +406,19 @@ export class BudgetTrackingService {
       
       const childrenBudgets = await Promise.all(
         budgetLimits.map(async (budget) => {
-          const child = await getDoc(doc(db, 'children', budget.childId));
-          const childName = child.data()?.name || 'Unknown';
+          // Skip budget limits with invalid childId
+          if (!budget.childId || budget.childId.trim() === '') {
+            console.warn('Skipping budget limit with invalid childId:', budget);
+            return null;
+          }
+
+          let childName = 'Unknown';
+          try {
+            const child = await getDoc(doc(db, 'children', budget.childId));
+            childName = child.data()?.name || child.data()?.fullName || 'Unknown';
+          } catch (error) {
+            console.warn('Error fetching child data for budget:', budget.childId, error);
+          }
           
           totalMonthlyLimit += budget.monthlyLimit;
           totalCurrentSpent += budget.currentSpent;
@@ -349,10 +440,13 @@ export class BudgetTrackingService {
         })
       );
       
+      // Filter out null results from invalid budget limits
+      const validChildrenBudgets = childrenBudgets.filter(budget => budget !== null);
+      
       return {
         totalMonthlyLimit,
         totalCurrentSpent,
-        childrenBudgets
+        childrenBudgets: validChildrenBudgets
       };
     } catch (error) {
       console.error('Error getting budget summary:', error);

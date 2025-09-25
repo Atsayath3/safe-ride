@@ -30,6 +30,9 @@ const EnhancedChildCard: React.FC<EnhancedChildCardProps> = ({
   const [showOptionsMenu, setShowOptionsMenu] = useState(false);
 
   const getInitials = (name: string) => {
+    if (!name || typeof name !== 'string') {
+      return 'CH'; // Default initials for "Child"
+    }
     return name
       .split(' ')
       .map(word => word.charAt(0))
@@ -75,16 +78,16 @@ const EnhancedChildCard: React.FC<EnhancedChildCardProps> = ({
             {/* Child Info Header */}
             <div className="flex items-center space-x-4">
               <Avatar className="h-14 w-14 ring-2 ring-blue-100">
-                <AvatarImage src={child.avatar} alt={child.fullName} />
+                <AvatarImage src={child.avatar} alt={child.fullName || `${child.firstName || ''} ${child.lastName || ''}`.trim() || 'Child'} />
                 <AvatarFallback className="bg-blue-100 text-blue-700 font-semibold text-lg">
-                  {getInitials(child.fullName)}
+                  {console.log('🔥🔥🔥 EnhancedChildCard child data:', child) || getInitials(child.fullName || `${child.firstName || ''} ${child.lastName || ''}`.trim())}
                 </AvatarFallback>
               </Avatar>
               
               <div className="flex-1 space-y-2">
                 <div className="flex items-center justify-between">
                   <h3 className="font-nunito font-semibold text-lg text-blue-900">
-                    {child.fullName}
+                    {child.fullName || `${child.firstName || ''} ${child.lastName || ''}`.trim() || 'Child'}
                   </h3>
                   <div className="flex items-center gap-2">
                     {statusInfo && (
@@ -137,12 +140,12 @@ const EnhancedChildCard: React.FC<EnhancedChildCardProps> = ({
                 
                 <div className="flex items-center space-x-1 text-sm text-blue-600">
                   <School className="h-4 w-4" />
-                  <span className="font-medium">{child.schoolName}</span>
+                  <span className="font-medium">{child.schoolName || 'School'}</span>
                 </div>
                 
                 <div className="flex items-center space-x-1 text-xs text-blue-500">
                   <MapPin className="h-3 w-3" />
-                  <span>{child.tripStartLocation.address}</span>
+                  <span>{child.tripStartLocation?.address || child.schoolLocation?.address || 'Location not set'}</span>
                 </div>
               </div>
             </div>
@@ -204,7 +207,7 @@ const EnhancedChildCard: React.FC<EnhancedChildCardProps> = ({
                   </div>
                   <div>
                     <h4 className="font-medium text-gray-900 mb-1">No Active Booking</h4>
-                    <p className="text-sm text-gray-600">Book a ride for {child.fullName}</p>
+                    <p className="text-sm text-gray-600">Book a ride for {child.fullName || `${child.firstName || ''} ${child.lastName || ''}`.trim() || 'child'}</p>
                   </div>
                   <Button
                     onClick={onBookNewRide}

@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { SiblingCoordination } from './SiblingCoordination';
 import { BudgetTracking } from './BudgetTracking';
-import { TrustedDriverNetwork } from './TrustedDriverNetwork';
+
 
 interface PersonalizationDashboardProps {
   parentId: string;
@@ -33,7 +33,7 @@ export const PersonalizationDashboard: React.FC<PersonalizationDashboardProps> =
     siblingGroups: 2,
     totalBudget: 15000,
     currentSpending: 8500,
-    trustedDrivers: 5,
+
     averageRating: 4.7,
     recentAlerts: [
       { type: 'budget', message: 'Emma is approaching her monthly budget limit (85%)', severity: 'warning' },
@@ -85,10 +85,7 @@ export const PersonalizationDashboard: React.FC<PersonalizationDashboardProps> =
               <DollarSign className="w-4 h-4" />
               Budget Tracking
             </TabsTrigger>
-            <TabsTrigger value="drivers" className="flex items-center gap-2">
-              <Star className="w-4 h-4" />
-              Trusted Drivers
-            </TabsTrigger>
+
           </TabsList>
 
           <TabsContent value="overview" className="space-y-6">
@@ -121,17 +118,7 @@ export const PersonalizationDashboard: React.FC<PersonalizationDashboardProps> =
                 </CardContent>
               </Card>
 
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center gap-3">
-                    <Shield className="w-8 h-8 text-purple-600" />
-                    <div>
-                      <p className="text-sm text-gray-600">Trusted Drivers</p>
-                      <p className="text-2xl font-bold">{overviewStats.trustedDrivers}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+
 
               <Card>
                 <CardContent className="p-6">
@@ -202,17 +189,7 @@ export const PersonalizationDashboard: React.FC<PersonalizationDashboardProps> =
                     </div>
                   </Button>
 
-                  <Button 
-                    onClick={() => setActiveTab('drivers')}
-                    className="flex items-center gap-2 h-auto p-4"
-                    variant="outline"
-                  >
-                    <Star className="w-5 h-5" />
-                    <div className="text-left">
-                      <p className="font-medium">Add Trusted Driver</p>
-                      <p className="text-xs text-gray-600">Build your driver network</p>
-                    </div>
-                  </Button>
+
                 </div>
               </CardContent>
             </Card>
@@ -257,9 +234,7 @@ export const PersonalizationDashboard: React.FC<PersonalizationDashboardProps> =
             <BudgetTracking parentId={parentId} children={children} />
           </TabsContent>
 
-          <TabsContent value="drivers">
-            <TrustedDriverNetwork parentId={parentId} />
-          </TabsContent>
+
         </Tabs>
       </div>
     </div>

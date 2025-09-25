@@ -36,23 +36,28 @@ export class SiblingCoordinationService {
   // Get all sibling groups for a parent
   static async getSiblingGroups(parentId: string): Promise<SiblingGroup[]> {
     try {
+      // Simplified query to avoid composite index requirement
       const q = query(
         collection(db, 'siblingGroups'),
-        where('parentId', '==', parentId),
-        where('isActive', '==', true),
-        orderBy('createdAt', 'desc')
+        where('parentId', '==', parentId)
       );
       
       const snapshot = await getDocs(q);
-      return snapshot.docs.map(doc => ({
+      const groups = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
-        createdAt: doc.data().createdAt.toDate(),
-        updatedAt: doc.data().updatedAt.toDate()
+        createdAt: doc.data().createdAt?.toDate ? doc.data().createdAt.toDate() : new Date(),
+        updatedAt: doc.data().updatedAt?.toDate ? doc.data().updatedAt.toDate() : new Date()
       } as SiblingGroup));
+      
+      // Filter and sort in memory to avoid index requirement
+      return groups
+        .filter(group => group.isActive)
+        .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
     } catch (error) {
       console.error('Error fetching sibling groups:', error);
-      throw error;
+      // Return empty array instead of throwing to prevent dashboard crashes
+      return [];
     }
   }
 
@@ -102,26 +107,31 @@ export class SiblingCoordinationService {
   // Get group ride requests
   static async getGroupRideRequests(parentId: string, status?: string): Promise<GroupRideRequest[]> {
     try {
-      let q = query(
+      // Simplified query to avoid composite index requirement
+      const q = query(
         collection(db, 'groupRideRequests'),
-        where('parentId', '==', parentId),
-        orderBy('scheduledDate', 'desc')
+        where('parentId', '==', parentId)
       );
 
-      if (status) {
-        q = query(q, where('status', '==', status));
-      }
-
       const snapshot = await getDocs(q);
-      return snapshot.docs.map(doc => ({
+      const requests = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data(),
-        scheduledDate: doc.data().scheduledDate.toDate(),
-        createdAt: doc.data().createdAt.toDate()
+        scheduledDate: doc.data().scheduledDate?.toDate ? doc.data().scheduledDate.toDate() : new Date(),
+        createdAt: doc.data().createdAt?.toDate ? doc.data().createdAt.toDate() : new Date()
       } as GroupRideRequest));
+      
+      // Filter and sort in memory to avoid index requirement
+      let filteredRequests = requests;
+      if (status) {
+        filteredRequests = requests.filter(request => request.status === status);
+      }
+      
+      return filteredRequests.sort((a, b) => b.scheduledDate.getTime() - a.scheduledDate.getTime());
     } catch (error) {
       console.error('Error fetching group ride requests:', error);
-      throw error;
+      // Return empty array instead of throwing to prevent dashboard crashes
+      return [];
     }
   }
 

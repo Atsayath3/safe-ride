@@ -18,7 +18,6 @@ const ParentLogin = () => {
   console.log('Auth functions available:', {
     login: typeof login,
     signup: typeof signup,
-    loginWithRole: typeof (authContext as any).loginWithRole,
     allKeys: Object.keys(authContext)
   });
   

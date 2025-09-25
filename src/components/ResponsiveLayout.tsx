@@ -89,12 +89,7 @@ const ResponsiveLayout: React.FC<ResponsiveLayoutProps> = ({
             path: 'budget',
             active: currentTab === 'budget'
           },
-          {
-            icon: <Star className="w-5 h-5" />,
-            label: 'Trusted Drivers',
-            path: 'drivers',
-            active: currentTab === 'drivers'
-          },
+
           {
             icon: <User className="w-5 h-5" />,
             label: 'Profile',

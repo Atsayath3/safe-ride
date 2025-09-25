@@ -54,55 +54,7 @@ export interface MonthlyExpense {
   }[];
 }
 
-export interface TrustedDriver {
-  id: string;
-  driverId: string;
-  parentId: string;
-  driverName: string;
-  driverPhoto?: string;
-  phone: string;
-  vehicleInfo: {
-    make: string;
-    model: string;
-    color: string;
-    plateNumber: string;
-  };
-  rating: number;
-  totalRides: number;
-  specialties: string[]; // e.g., ["patient with children", "punctual", "safe driving"]
-  notes: string;
-  isPreferred: boolean;
-  isPriority: boolean; // for emergency situations
-  availability: {
-    monday: string[];
-    tuesday: string[];
-    wednesday: string[];
-    thursday: string[];
-    friday: string[];
-    saturday: string[];
-    sunday: string[];
-  };
-  createdAt: Date;
-  lastRideDate: Date;
-}
 
-export interface DriverRating {
-  id: string;
-  driverId: string;
-  parentId: string;
-  rideId: string;
-  rating: number;
-  categories: {
-    safety: number;
-    punctuality: number;
-    cleanliness: number;
-    communication: number;
-    childFriendliness: number;
-  };
-  review: string;
-  wouldRecommend: boolean;
-  createdAt: Date;
-}
 
 export interface GroupRideRequest {
   id: string;

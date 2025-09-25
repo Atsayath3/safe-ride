@@ -78,12 +78,21 @@ const Welcome = () => {
                 </div>
               </div>
               
-              <Button 
-                onClick={() => navigate('/parent/login')}
-                className="w-full h-14 bg-gradient-to-r from-blue-600 to-purple-700 hover:from-blue-700 hover:to-purple-800 text-white font-bold text-lg shadow-xl rounded-xl"
-              >
-                I'm a Parent
-              </Button>
+              <div className="space-y-3">
+                <Button 
+                  onClick={() => navigate('/parent/onboarding')}
+                  className="w-full h-14 bg-gradient-to-r from-blue-600 to-purple-700 hover:from-blue-700 hover:to-purple-800 text-white font-bold text-lg shadow-xl rounded-xl"
+                >
+                  Get Started as Parent
+                </Button>
+                <Button 
+                  onClick={() => navigate('/parent/login')}
+                  variant="outline"
+                  className="w-full h-12 border-2 border-gray-300 hover:border-blue-400 text-gray-700 font-semibold text-base"
+                >
+                  Already have an account? Sign In
+                </Button>
+              </div>
             </CardContent>
           </Card>
 

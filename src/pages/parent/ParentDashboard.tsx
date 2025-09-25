@@ -25,26 +25,31 @@ import { BookingCleanupService } from '@/services/bookingCleanupService';
 import { ActiveRide } from '@/interfaces/ride';
 import { SiblingCoordination } from '@/components/parent/SiblingCoordination';
 import { BudgetTracking } from '@/components/parent/BudgetTracking';
-import { TrustedDriverNetwork } from '@/components/parent/TrustedDriverNetwork';
+
 
 export interface Child {
   id: string;
-  fullName: string;
-  dateOfBirth: Date;
-  gender: 'male' | 'female' | 'other';
-  schoolName: string;
-  schoolLocation: { lat: number; lng: number; address: string };
-  tripStartLocation: { lat: number; lng: number; address: string };
-  studentId: string;
+  fullName?: string;
+  firstName?: string;
+  lastName?: string;
+  dateOfBirth?: Date;
+  gender?: 'male' | 'female' | 'other';
+  schoolName?: string;
+  schoolLocation?: { lat: number; lng: number; address: string };
+  tripStartLocation?: { lat: number; lng: number; address: string };
+  studentId?: string;
   avatar?: string;
 }
 
 const ParentDashboard = () => {
+  console.log('🔥🔥🔥 ParentDashboard component loading');
   const navigate = useNavigate();
   const { userProfile, currentUser, logout } = useAuth();
+  console.log('🔥🔥🔥 ParentDashboard - userProfile:', userProfile, 'currentUser:', currentUser);
   const [children, setChildren] = useState<Child[]>([]);
   const [activeRides, setActiveRides] = useState<ActiveRide[]>([]);
   const [currentTab, setCurrentTab] = useState('home');
+  const [parentProfile, setParentProfile] = useState<any>(null);
   
   const [selectedChild, setSelectedChild] = useState<Child | null>(null);
   const [showOptionsModal, setShowOptionsModal] = useState(false);
@@ -61,19 +66,37 @@ const ParentDashboard = () => {
       const querySnapshot = await getDocs(q);
       const childrenList: Child[] = querySnapshot.docs.map(docSnap => {
         const data = docSnap.data();
+        console.log('🔥🔥🔥 ParentDashboard child data from Firestore:', data);
+        
         return {
           id: docSnap.id,
-          fullName: data.fullName,
+          fullName: data.fullName || `${data.firstName || ''} ${data.lastName || ''}`.trim(),
+          firstName: data.firstName,
+          lastName: data.lastName,
           dateOfBirth: data.dateOfBirth?.toDate ? data.dateOfBirth.toDate() : data.dateOfBirth,
           gender: data.gender,
-          schoolName: data.schoolName,
+          schoolName: data.schoolName || 'School',
           schoolLocation: data.schoolLocation,
-          tripStartLocation: data.pickupLocation || data.tripStartLocation,
+          tripStartLocation: data.pickupLocation || data.tripStartLocation || data.schoolLocation,
           studentId: data.studentId,
           avatar: data.avatar || undefined,
         };
       });
       setChildren(childrenList);
+    };
+
+    const fetchParentProfile = async () => {
+      if (!currentUser) return;
+      try {
+        const parentDoc = await getDocs(query(collection(db, 'parents'), where('parentId', '==', currentUser.uid)));
+        if (!parentDoc.empty) {
+          const data = parentDoc.docs[0].data();
+          console.log('🔥🔥🔥 ParentDashboard parent profile data:', data);
+          setParentProfile(data);
+        }
+      } catch (error) {
+        console.error('Error fetching parent profile:', error);
+      }
     };
 
     const fetchActiveRides = async () => {
@@ -88,6 +111,7 @@ const ParentDashboard = () => {
 
     fetchChildren();
     fetchActiveRides();
+    fetchParentProfile();
     
     // Refresh active rides every 30 seconds
     const interval = setInterval(fetchActiveRides, 30000);
@@ -364,17 +388,7 @@ const ParentDashboard = () => {
                             <p className="text-xs text-green-600">Monitor spending</p>
                           </div>
                         </Button>
-                        <Button
-                          variant="outline"
-                          onClick={() => setCurrentTab('drivers')}
-                          className="h-auto p-4 flex flex-col items-center gap-2 border-yellow-200 hover:bg-yellow-50"
-                        >
-                          <Star className="w-6 h-6 text-yellow-600" />
-                          <div className="text-center">
-                            <p className="font-medium text-yellow-900">Trusted Drivers</p>
-                            <p className="text-xs text-yellow-600">Manage driver network</p>
-                          </div>
-                        </Button>
+
                       </div>
                     </div>
                   </div>
@@ -491,9 +505,10 @@ const ParentDashboard = () => {
                   parentId={currentUser?.uid || ''} 
                   children={children.map(child => ({
                     id: child.id,
-                    name: child.fullName,
-                    school: child.schoolName
+                    name: child.fullName || `${child.firstName || ''} ${child.lastName || ''}`.trim() || 'Child',
+                    school: child.schoolName || 'School'
                   }))}
+                  homeLocation={parentProfile?.homeLocation || null}
                 />
               </TabsContent>
 
@@ -509,10 +524,7 @@ const ParentDashboard = () => {
                 />
               </TabsContent>
 
-              {/* Trusted Drivers Tab */}
-              <TabsContent value="drivers" className="h-full m-0 p-4 space-y-6">
-                <TrustedDriverNetwork parentId={currentUser?.uid || ''} />
-              </TabsContent>
+
             </div>
           </Tabs>
         </div>

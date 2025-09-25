@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { OnboardingProvider } from "@/contexts/ParentOnboardingContext";
 import AnimatedBackground from "@/components/AnimatedBackground";
 
 // Pages
@@ -24,7 +25,9 @@ import DriverRequests from "./pages/driver/Requests";
 import BookingManagement from "./pages/driver/BookingManagement";
 import AdminLogin from "./pages/admin/AdminLogin";
 import AdminDashboard from "./pages/admin/AdminDashboard";
+import DatabaseManagement from "./pages/admin/DatabaseManagement";
 import ParentLogin from "./pages/parent/ParentLogin";
+import ParentOnboarding from "./pages/parent/ParentOnboarding";
 import ParentDashboard from "./pages/parent/ParentDashboard";
 import AddChild from "./pages/parent/AddChild";
 import AddChildLocations from "./pages/parent/AddChildLocations";
@@ -62,6 +65,11 @@ const App = () => (
             
             {/* Parent Routes */}
             <Route path="/parent/login" element={<ParentLogin />} />
+            <Route path="/parent/onboarding" element={
+              <OnboardingProvider>
+                <ParentOnboarding />
+              </OnboardingProvider>
+            } />
             <Route path="/parent/profile-setup" element={<ParentProfileSetup />} />
             <Route path="/parent/dashboard" element={<ParentDashboard />} />
             <Route path="/parent/add-child" element={<AddChild />} />
@@ -72,6 +80,7 @@ const App = () => (
             {/* Admin Routes */}
             <Route path="/admin/login" element={<AdminLogin />} />
             <Route path="/admin/dashboard" element={<AdminDashboard />} />
+            <Route path="/admin/database" element={<DatabaseManagement />} />
             
             <Route path="*" element={<NotFound />} />
           </Routes>

@@ -9,6 +9,7 @@ export interface ChildProfile {
   schoolName: string;
   schoolLocation: { lat: number; lng: number; address: string };
   tripStartLocation: { lat: number; lng: number; address: string };
+  homeLocation?: { lat: number; lng: number; address: string };
   studentId: string;
   avatar?: string;
   parentId: string;
@@ -38,6 +39,7 @@ export class ChildrenService {
           schoolName: data.schoolName,
           schoolLocation: data.schoolLocation,
           tripStartLocation: data.tripStartLocation,
+          homeLocation: data.homeLocation,
           studentId: data.studentId,
           avatar: data.avatar,
           parentId: data.parentId
@@ -70,6 +72,7 @@ export class ChildrenService {
             schoolName: data.schoolName,
             schoolLocation: data.schoolLocation,
             tripStartLocation: data.tripStartLocation,
+            homeLocation: data.homeLocation,
             studentId: data.studentId,
             avatar: data.avatar,
             parentId: data.parentId

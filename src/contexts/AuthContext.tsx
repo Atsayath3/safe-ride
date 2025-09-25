@@ -54,7 +54,7 @@ interface AuthContextType {
   userProfile: UserProfile | null;
   loading: boolean;
   login: (email: string, password: string) => Promise<void>;
-  signup: (email: string, password: string, role: 'parent' | 'driver') => Promise<void>;
+  signup: (email: string, password: string, role: 'parent' | 'driver' | 'admin') => Promise<User>;
   logout: () => Promise<void>;
   sendPhoneOTP: (phoneNumber: string) => Promise<ConfirmationResult>;
   verifyOTP: (confirmationResult: ConfirmationResult, otp: string) => Promise<void>;
@@ -81,25 +81,50 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await signInWithEmailAndPassword(auth, email, password);
   };
 
-  const signup = async (email: string, password: string, role: 'parent' | 'driver') => {
+  const signup = async (email: string, password: string, role: 'parent' | 'driver' | 'admin') => {
     const { user } = await createUserWithEmailAndPassword(auth, email, password);
     
-    const profile: UserProfile = {
-      uid: user.uid,
-      email: user.email || undefined,
-      role,
-      status: role === 'driver' ? 'pending' : undefined,
-      profileComplete: false,
-      createdAt: new Date()
-    };
-
+    // Only create profile documents for drivers and admins immediately
+    // Parents will have their profile created after completing full onboarding
     if (role === 'driver') {
+      const profile: any = {
+        uid: user.uid,
+        email: user.email || undefined,
+        role,
+        status: 'pending',
+        profileComplete: false,
+        createdAt: new Date()
+      };
+
+      // Remove any undefined fields to prevent Firestore errors
+      Object.keys(profile).forEach(key => {
+        if (profile[key] === undefined) {
+          delete profile[key];
+        }
+      });
+
       await setDoc(doc(db, 'drivers', user.uid), profile);
-    } else if (role === 'parent') {
-      await setDoc(doc(db, 'parents', user.uid), profile);
     } else if (role === 'admin') {
+      const profile: any = {
+        uid: user.uid,
+        email: user.email || undefined,
+        role,
+        profileComplete: false,
+        createdAt: new Date()
+      };
+
+      // Remove any undefined fields to prevent Firestore errors
+      Object.keys(profile).forEach(key => {
+        if (profile[key] === undefined) {
+          delete profile[key];
+        }
+      });
+
       await setDoc(doc(db, 'admins', user.uid), profile);
     }
+    // Note: Parent profiles are created only after completing full onboarding in Step 6
+    
+    return user; // Return the created user for further processing
   };
 
   const logout = async () => {
@@ -188,12 +213,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (docSnap.exists()) {
         const data = docSnap.data();
-        return {
+        console.log('🔥🔥🔥 AuthContext fetchUserProfile - raw data:', data);
+        
+        // Helper function to safely convert Firestore timestamps
+        const safeToDate = (timestamp: any) => {
+          if (!timestamp) return null;
+          if (typeof timestamp?.toDate === 'function') {
+            return timestamp.toDate();
+          }
+          if (timestamp instanceof Date) {
+            return timestamp;
+          }
+          if (typeof timestamp === 'string') {
+            return new Date(timestamp);
+          }
+          return null;
+        };
+
+        const userProfile = {
           ...data,
-          createdAt: data.createdAt?.toDate() || new Date(),
-          rejectedAt: data.rejectedAt?.toDate(),
-          approvedAt: data.approvedAt?.toDate()
+          createdAt: safeToDate(data.createdAt) || new Date(),
+          rejectedAt: safeToDate(data.rejectedAt),
+          approvedAt: safeToDate(data.approvedAt)
         } as UserProfile;
+        
+        console.log('🔥🔥🔥 AuthContext fetchUserProfile - processed profile:', userProfile);
+        return userProfile;
       }
     }
     return null;
