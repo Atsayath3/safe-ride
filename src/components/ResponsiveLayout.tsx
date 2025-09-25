@@ -112,15 +112,9 @@ const ResponsiveLayout: React.FC<ResponsiveLayoutProps> = ({
             active: location.pathname.includes('/rides')
           },
           {
-            icon: <Bell className="w-5 h-5" />,
-            label: 'Requests',
-            path: '/driver/requests',
-            active: location.pathname.includes('/requests')
-          },
-          {
             icon: <Users className="w-5 h-5" />,
             label: 'Bookings',
-            path: '/driver/booking-management',
+            path: '/driver/bookings',
             active: location.pathname.includes('/booking')
           },
           {
@@ -251,28 +245,33 @@ const ResponsiveLayout: React.FC<ResponsiveLayoutProps> = ({
         {/* Navigation */}
         <nav className="flex-1 p-4">
           <ul className="space-y-2">
-            {/* Main Navigation */}
-            {navigationItems.slice(0, 2).map((item, index) => (
-              <li key={index}>
-                <button
-                  onClick={() => {
-                    if (theme === 'parent' && onTabChange) {
-                      onTabChange(item.path);
-                    } else {
-                      navigate(item.path);
-                    }
-                  }}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
-                    item.active
-                      ? `${themeColors.secondary} ${themeColors.text} border ${themeColors.border}`
-                      : 'text-gray-600 hover:bg-gray-50'
-                  }`}
-                >
-                  {item.icon}
-                  <span className="font-medium">{item.label}</span>
-                </button>
-              </li>
-            ))}
+            {/* Personalization Section - Only for Parent */}
+            {theme === 'parent' && (
+              <>
+                {/* Main Navigation for Parent */}
+                {navigationItems.slice(0, 2).map((item, index) => (
+                  <li key={index}>
+                    <button
+                      onClick={() => {
+                        if (theme === 'parent' && onTabChange) {
+                          onTabChange(item.path);
+                        } else {
+                          navigate(item.path);
+                        }
+                      }}
+                      className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left transition-colors ${
+                        item.active
+                          ? `${themeColors.secondary} ${themeColors.text} border ${themeColors.border}`
+                          : 'text-gray-600 hover:bg-gray-50'
+                      }`}
+                    >
+                      {item.icon}
+                      <span className="font-medium">{item.label}</span>
+                    </button>
+                  </li>
+                ))}
+              </>
+            )}
             
             {/* Personalization Section - Only for Parent */}
             {theme === 'parent' && navigationItems.length > 3 && (

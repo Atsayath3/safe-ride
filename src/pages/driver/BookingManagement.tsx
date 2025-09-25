@@ -2,16 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Calendar, Users, Clock, TrendingUp } from 'lucide-react';
-import MobileLayout from '@/components/mobile/MobileLayout';
+import { Calendar, Users, Clock, TrendingUp, RefreshCw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import ResponsiveLayout from '@/components/ResponsiveLayout';
 import BookingRequestCard from '@/components/driver/BookingRequestCard';
 import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { BookingService } from '@/services/bookingService';
 import { Booking, DriverAvailability } from '@/interfaces/booking';
 import { toast } from '@/hooks/use-toast';
 
 const BookingManagement = () => {
-  const { userProfile } = useAuth();
+  const { userProfile, logout } = useAuth();
+  const navigate = useNavigate();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [availability, setAvailability] = useState<DriverAvailability | null>(null);
   const [loading, setLoading] = useState(false);
@@ -144,129 +147,144 @@ const BookingManagement = () => {
     }
   };
 
-  const pendingBookings = bookings.filter(b => b.status === 'pending');
   const confirmedBookings = bookings.filter(b => b.status === 'confirmed');
   const completedBookings = bookings.filter(b => b.status === 'completed');
 
   return (
-    <MobileLayout title="Booking Management" showBack theme="driver">
-      <div className="p-4 space-y-6 min-h-screen">
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 gap-4">
-          <Card className="border-orange-200 shadow-md bg-white">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2">
-                <Users className="w-5 h-5 text-orange-600" />
+    <ResponsiveLayout 
+      title="Booking Management" 
+      theme="driver"
+      userProfile={userProfile}
+      onLogout={logout}
+      rightContent={
+        <Button 
+          variant="outline" 
+          onClick={loadBookings}
+          className="border-green-300 text-green-700 hover:bg-green-50"
+        >
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Refresh
+        </Button>
+      }
+    >
+      <div className="space-y-6">
+        {/* Stats Overview */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card className="bg-white border border-slate-200 shadow-sm">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
                 <div>
-                  <div className="text-2xl font-bold text-orange-900">
-                    {availability?.availableSeats || 0}
+                  <div className="text-2xl font-bold text-slate-900">
+                    {bookings.length}
                   </div>
-                  <div className="text-sm text-orange-600">Available Seats</div>
+                  <div className="text-sm font-medium text-slate-600">Total Bookings</div>
+                </div>
+                <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+                  <Calendar className="h-6 w-6 text-white" />
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          <Card className="border-orange-200 shadow-md bg-white">
-            <CardContent className="p-4">
-              <div className="flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-green-600" />
+          <Card className="bg-white border border-slate-200 shadow-sm">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
                 <div>
-                  <div className="text-2xl font-bold text-orange-900">{pendingBookings.length}</div>
-                  <div className="text-sm text-orange-600">Pending Requests</div>
+                  <div className="text-2xl font-bold text-slate-900">{confirmedBookings.length}</div>
+                  <div className="text-sm font-medium text-slate-600">Confirmed</div>
+                </div>
+                <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center">
+                  <Users className="h-6 w-6 text-white" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white border border-slate-200 shadow-sm">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div>
+                  <div className="text-2xl font-bold text-slate-900">{completedBookings.length}</div>
+                  <div className="text-sm font-medium text-slate-600">Completed</div>
+                </div>
+                <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg flex items-center justify-center">
+                  <TrendingUp className="h-6 w-6 text-white" />
                 </div>
               </div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Booking Tabs */}
-        <Tabs defaultValue="pending" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-3 bg-orange-100">
-            <TabsTrigger value="pending" className="relative data-[state=active]:bg-orange-600 data-[state=active]:text-white">
-              Pending
-              {pendingBookings.length > 0 && (
-                <Badge variant="destructive" className="absolute -top-2 -right-2 h-5 w-5 p-0 text-xs">
-                  {pendingBookings.length}
-                </Badge>
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="confirmed" className="data-[state=active]:bg-orange-600 data-[state=active]:text-white">
-              Confirmed ({confirmedBookings.length})
-            </TabsTrigger>
-            <TabsTrigger value="completed" className="data-[state=active]:bg-orange-600 data-[state=active]:text-white">
-              Completed ({completedBookings.length})
-            </TabsTrigger>
-          </TabsList>
+        {/* Booking Management */}
+        <Card className="bg-white border border-slate-200 shadow-sm">
+          <CardHeader className="border-b border-slate-200 bg-slate-50/50">
+            <CardTitle className="text-lg font-semibold text-slate-900 flex items-center gap-2">
+              <Users className="h-5 w-5 text-slate-600" />
+              Booking Management
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="p-6">
+            <Tabs defaultValue="confirmed" className="space-y-6">
+              <TabsList className="grid w-full grid-cols-2 bg-slate-100">
+                <TabsTrigger value="confirmed" className="data-[state=active]:bg-slate-900 data-[state=active]:text-white">
+                  Confirmed ({confirmedBookings.length})
+                </TabsTrigger>
+                <TabsTrigger value="completed" className="data-[state=active]:bg-slate-900 data-[state=active]:text-white">
+                  Completed ({completedBookings.length})
+                </TabsTrigger>
+              </TabsList>
 
-          <TabsContent value="pending" className="space-y-4">
-            {loading ? (
-              <div className="text-center py-8 text-orange-600">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-orange-600 mx-auto mb-2"></div>
-                Loading bookings...
-              </div>
-            ) : pendingBookings.length === 0 ? (
-              <div className="text-center py-8">
-                <Clock className="w-12 h-12 text-orange-400 mx-auto mb-4" />
-                <p className="text-orange-600 font-medium">No pending booking requests</p>
-                <p className="text-orange-500 text-sm mt-1">New requests from parents will appear here</p>
-              </div>
-            ) : (
-              pendingBookings.map((booking) => (
-                <BookingRequestCard
-                  key={booking.id}
-                  booking={booking}
-                  onAccept={handleAcceptBooking}
-                  onReject={handleRejectBooking}
-                  onComplete={handleCompleteBooking}
-                  loading={actionLoading === booking.id}
-                />
-              ))
-            )}
-          </TabsContent>
+              <TabsContent value="confirmed" className="space-y-4">
+                {loading ? (
+                  <div className="text-center py-12 text-slate-600">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-600 mx-auto mb-4"></div>
+                    <p className="font-medium">Loading bookings...</p>
+                  </div>
+                ) : confirmedBookings.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Users className="w-16 h-16 text-slate-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-slate-900 mb-2">No confirmed bookings</h3>
+                    <p className="text-slate-500">Confirmed bookings will appear here</p>
+                  </div>
+                ) : (
+                  confirmedBookings.map((booking) => (
+                    <BookingRequestCard
+                      key={booking.id}
+                      booking={booking}
+                      onAccept={handleAcceptBooking}
+                      onReject={handleRejectBooking}
+                      onComplete={handleCompleteBooking}
+                      loading={actionLoading === booking.id}
+                    />
+                  ))
+                )}
+              </TabsContent>
 
-          <TabsContent value="confirmed" className="space-y-4">
-            {confirmedBookings.length === 0 ? (
-              <div className="text-center py-8">
-                <Calendar className="w-12 h-12 text-orange-400 mx-auto mb-4" />
-                <p className="text-orange-600">No confirmed bookings</p>
-              </div>
-            ) : (
-              confirmedBookings.map((booking) => (
-                <BookingRequestCard
-                  key={booking.id}
-                  booking={booking}
-                  onAccept={handleAcceptBooking}
-                  onReject={handleRejectBooking}
-                  onComplete={handleCompleteBooking}
-                  loading={actionLoading === booking.id}
-                />
-              ))
-            )}
-          </TabsContent>
-
-          <TabsContent value="completed" className="space-y-4">
-            {completedBookings.length === 0 ? (
-              <div className="text-center py-8">
-                <TrendingUp className="w-12 h-12 text-orange-400 mx-auto mb-4" />
-                <p className="text-orange-600">No completed trips yet</p>
-              </div>
-            ) : (
-              completedBookings.map((booking) => (
-                <BookingRequestCard
-                  key={booking.id}
-                  booking={booking}
-                  onAccept={handleAcceptBooking}
-                  onReject={handleRejectBooking}
-                  onComplete={handleCompleteBooking}
-                  loading={actionLoading === booking.id}
-                />
-              ))
-            )}
-          </TabsContent>
-        </Tabs>
+              <TabsContent value="completed" className="space-y-4">
+                {completedBookings.length === 0 ? (
+                  <div className="text-center py-12">
+                    <TrendingUp className="w-16 h-16 text-slate-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-slate-900 mb-2">No completed trips yet</h3>
+                    <p className="text-slate-500">Completed bookings will appear here</p>
+                  </div>
+                ) : (
+                  completedBookings.map((booking) => (
+                    <BookingRequestCard
+                      key={booking.id}
+                      booking={booking}
+                      onAccept={handleAcceptBooking}
+                      onReject={handleRejectBooking}
+                      onComplete={handleCompleteBooking}
+                      loading={actionLoading === booking.id}
+                    />
+                  ))
+                )}
+              </TabsContent>
+            </Tabs>
+          </CardContent>
+        </Card>
       </div>
-    </MobileLayout>
+    </ResponsiveLayout>
   );
 };
 

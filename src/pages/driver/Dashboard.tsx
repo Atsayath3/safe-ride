@@ -155,12 +155,85 @@ const DriverDashboard = () => {
     }
   };
 
+  const checkLocationPermission = async (): Promise<boolean> => {
+    if (!navigator.geolocation) {
+      toast({
+        title: "Location Not Supported",
+        description: "Your browser doesn't support location services. Please use a different browser.",
+        variant: "destructive"
+      });
+      return false;
+    }
+
+    try {
+      // Check if location permission is already granted
+      const permission = await navigator.permissions.query({ name: 'geolocation' });
+      
+      if (permission.state === 'granted') {
+        return true;
+      }
+      
+      if (permission.state === 'denied') {
+        toast({
+          title: "Location Access Denied",
+          description: "Please enable location services in your browser settings to start rides.",
+          variant: "destructive"
+        });
+        return false;
+      }
+
+      // If permission is 'prompt', request location access
+      return new Promise((resolve) => {
+        navigator.geolocation.getCurrentPosition(
+          () => {
+            toast({
+              title: "Location Access Granted",
+              description: "Location services are now enabled. Starting your ride...",
+            });
+            resolve(true);
+          },
+          (error) => {
+            console.error('Location permission error:', error);
+            toast({
+              title: "Location Access Required",
+              description: "Please allow location access to start rides and share your location with parents.",
+              variant: "destructive"
+            });
+            resolve(false);
+          },
+          { timeout: 10000 }
+        );
+      });
+    } catch (error) {
+      console.error('Error checking location permission:', error);
+      toast({
+        title: "Location Check Failed",
+        description: "Unable to check location permissions. Please try again.",
+        variant: "destructive"
+      });
+      return false;
+    }
+  };
+
   const handleStartRide = async () => {
     if (!userProfile?.uid) return;
     
     setStartingRide(true);
     
     try {
+      // First, check location permissions
+      const locationAllowed = await checkLocationPermission();
+      
+      if (!locationAllowed) {
+        toast({
+          title: "Cannot Start Ride",
+          description: "Location access is required to start rides for safety reasons.",
+          variant: "destructive"
+        });
+        return;
+      }
+
+      // If location is allowed, proceed with starting the ride
       const ride = await RideService.startRide(userProfile.uid);
       setActiveRide(ride);
       
@@ -176,26 +249,28 @@ const DriverDashboard = () => {
           
           if (trackingStarted) {
             toast({
-              title: "Ride Started!",
-              description: `Found ${ride.totalChildren} children. Location sharing started automatically.`,
+              title: "Ride Started Successfully!",
+              description: `Found ${ride.totalChildren} children. Location sharing is active for parent safety.`,
             });
           } else {
             toast({
-              title: "Ride Started!",
-              description: `Found ${ride.totalChildren} children. Location sharing failed - check permissions.`,
+              title: "Ride Started with Warning",
+              description: `Found ${ride.totalChildren} children. Location sharing failed - please check your connection.`,
+              variant: "destructive"
             });
           }
         } else {
           toast({
             title: "Ride Started!",
-            description: `Found ${ride.totalChildren} children. No parents to notify for location tracking.`,
+            description: `Found ${ride.totalChildren} children. Ready to begin pickups.`,
           });
         }
       } catch (locationError) {
         console.error('Error starting location tracking:', locationError);
         toast({
-          title: "Ride Started!",
-          description: `Found ${ride.totalChildren} children. Location sharing will need to be started manually.`,
+          title: "Ride Started with Issues",
+          description: `Found ${ride.totalChildren} children. Location sharing encountered issues.`,
+          variant: "destructive"
         });
       }
     } catch (error: any) {
@@ -277,7 +352,7 @@ const DriverDashboard = () => {
                     <div>
                       <h3 className="font-bold text-green-900 text-lg mb-2">Ready to Start Today's Ride?</h3>
                       <p className="text-sm text-green-700 mb-4">
-                        Click below to get today's children list and start tracking pickups
+                        Location sharing will be enabled automatically for parent safety. Click below to begin.
                       </p>
                       <Button
                         onClick={handleStartRide}
@@ -288,7 +363,7 @@ const DriverDashboard = () => {
                         {startingRide ? (
                           <>
                             <Clock className="h-5 w-5 mr-2 animate-spin" />
-                            Starting Ride...
+                            Checking Location & Starting...
                           </>
                         ) : (
                           <>
@@ -397,49 +472,6 @@ const DriverDashboard = () => {
                 </div>
               </CardContent>
             </Card>
-
-            {/* Quick Actions */}
-            <div className="grid grid-cols-2 gap-4">
-              <Card 
-                className="border-orange-200 hover:border-orange-400 cursor-pointer transition-colors shadow-md bg-white hover:shadow-lg"
-                onClick={() => navigate('/driver/routes')}
-              >
-                <CardContent className="p-4 text-center">
-                  <MapPin className="h-8 w-8 text-orange-600 mx-auto mb-2" />
-                  <p className="font-medium text-sm text-orange-800">Set Routes</p>
-                </CardContent>
-              </Card>
-
-              <Card 
-                className="border-orange-200 hover:border-orange-400 cursor-pointer transition-colors shadow-md bg-white hover:shadow-lg"
-                onClick={() => navigate('/driver/bookings')}
-              >
-                <CardContent className="p-4 text-center">
-                  <Calendar className="h-8 w-8 text-orange-600 mx-auto mb-2" />
-                  <p className="font-medium text-sm text-orange-800">Bookings</p>
-                </CardContent>
-              </Card>
-
-              <Card 
-                className="border-orange-200 hover:border-orange-400 cursor-pointer transition-colors shadow-md bg-white hover:shadow-lg"
-                onClick={() => navigate('/driver/rides')}
-              >
-                <CardContent className="p-4 text-center">
-                  <Clock className="h-8 w-8 text-orange-600 mx-auto mb-2" />
-                  <p className="font-medium text-sm text-orange-800">My Rides</p>
-                </CardContent>
-              </Card>
-
-              <Card 
-                className="border-orange-200 hover:border-orange-400 cursor-pointer transition-colors shadow-md bg-white hover:shadow-lg"
-                onClick={() => navigate('/driver/profile')}
-              >
-                <CardContent className="p-4 text-center">
-                  <Settings className="h-8 w-8 text-orange-600 mx-auto mb-2" />
-                  <p className="font-medium text-sm text-orange-800">Profile</p>
-                </CardContent>
-              </Card>
-            </div>
 
             {/* Ride Management */}
             {userProfile?.status === 'approved' && (

@@ -15,7 +15,6 @@ import {
 import { ActiveRide, RideChild } from '@/interfaces/ride';
 import { RideService } from '@/services/rideService';
 import { toast } from '@/hooks/use-toast';
-import LocationTrackingControl from './LocationTrackingControl';
 import EmergencyContactModal from './EmergencyContactModal';
 
 interface ActiveRideTrackerProps {
@@ -249,16 +248,6 @@ const ActiveRideTracker: React.FC<ActiveRideTrackerProps> = ({ ride, onRideUpdat
             </p>
           </CardContent>
         </Card>
-      )}
-
-      {/* Location Tracking Control */}
-      {ride.status !== 'completed' && (
-        <LocationTrackingControl 
-          rideId={ride.id}
-          driverId={ride.driverId}
-          isRideActive={ride.status === 'in_progress'}
-          childrenCount={ride.totalChildren}
-        />
       )}
 
       {/* Children List */}
