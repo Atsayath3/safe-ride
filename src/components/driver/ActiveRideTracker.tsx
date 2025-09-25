@@ -10,14 +10,13 @@ import {
   XCircle, 
   AlertCircle,
   Navigation,
-  Phone
+  AlertTriangle
 } from 'lucide-react';
 import { ActiveRide, RideChild } from '@/interfaces/ride';
 import { RideService } from '@/services/rideService';
-import { BookingService } from '@/services/bookingService';
-import { notificationService } from '@/services/notificationService';
 import { toast } from '@/hooks/use-toast';
 import LocationTrackingControl from './LocationTrackingControl';
+import EmergencyContactModal from './EmergencyContactModal';
 
 interface ActiveRideTrackerProps {
   ride: ActiveRide;
@@ -26,57 +25,7 @@ interface ActiveRideTrackerProps {
 
 const ActiveRideTracker: React.FC<ActiveRideTrackerProps> = ({ ride, onRideUpdate }) => {
   const [updatingChild, setUpdatingChild] = useState<string | null>(null);
-  const [sosLoading, setSosLoading] = useState(false);
-  const [showEmergencyMenu, setShowEmergencyMenu] = useState(false);
-
-  // Emergency contact numbers
-  const emergencyContacts = [
-    {
-      name: 'Police',
-      number: '+94740464232',
-      icon: '🚔',
-      color: 'bg-blue-600 hover:bg-blue-700'
-    },
-    {
-      name: 'Ambulance',
-      number: '+94761145043',
-      icon: '🚑',
-      color: 'bg-red-600 hover:bg-red-700'
-    },
-    {
-      name: 'Safety Team',
-      number: '+94766942026',
-      icon: '🛡️',
-      color: 'bg-green-600 hover:bg-green-700'
-    }
-  ];
-
-  // Handle emergency contact selection
-  const handleEmergencyContact = (contact: { name: string; number: string; icon: string }) => {
-    try {
-      // Open phone dialer with the emergency number
-      window.location.href = `tel:${contact.number}`;
-      
-      // Show confirmation toast
-      toast({
-        title: `${contact.icon} Calling ${contact.name}`,
-        description: `Opening dialer for ${contact.number}`,
-      });
-      
-      // Close the menu
-      setShowEmergencyMenu(false);
-      
-      // Optional: Also send notification to parents about emergency call
-      handleEmergencySOS(contact.name);
-    } catch (error) {
-      console.error('Error opening dialer:', error);
-      toast({
-        title: "Error",
-        description: "Failed to open phone dialer",
-        variant: "destructive"
-      });
-    }
-  };
+  const [showEmergencyModal, setShowEmergencyModal] = useState(false);
 
   // Helper function to convert Firestore Timestamp or Date to Date object
   const toDate = (timestamp: any): Date => {
@@ -130,81 +79,6 @@ const ActiveRideTracker: React.FC<ActiveRideTrackerProps> = ({ ride, onRideUpdat
     }
   };
 
-  const handleEmergencySOS = async (emergencyType?: string | React.MouseEvent) => {
-    setSosLoading(true);
-    
-    // If emergencyType is a string, it's called from emergency contact selection
-    const alertType = typeof emergencyType === 'string' ? emergencyType : 'General Emergency';
-    
-    try {
-      // Get current location if available
-      let currentLocation: { lat: number; lng: number; address?: string } | undefined;
-      
-      if (navigator.geolocation) {
-        try {
-          const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-            navigator.geolocation.getCurrentPosition(resolve, reject, {
-              timeout: 5000,
-              enableHighAccuracy: true
-            });
-          });
-          
-          currentLocation = {
-            lat: position.coords.latitude,
-            lng: position.coords.longitude,
-            address: `${position.coords.latitude}, ${position.coords.longitude}`
-          };
-        } catch (geoError) {
-          console.warn('Could not get current location:', geoError);
-        }
-      }
-
-      // Get all parent IDs from the ride bookings
-      const parentIds: string[] = [];
-      const driverName = 'Driver'; // This should be fetched from driver profile
-      
-      for (const child of ride.children) {
-        try {
-          const booking = await BookingService.getBookingById(child.bookingId);
-          if (booking && !parentIds.includes(booking.parentId)) {
-            parentIds.push(booking.parentId);
-          }
-        } catch (error) {
-          console.error(`Error fetching booking for child ${child.childId}:`, error);
-        }
-      }
-
-      if (parentIds.length === 0) {
-        throw new Error('No parent contacts found for emergency alert');
-      }
-
-      // Send emergency SOS alerts
-      await notificationService.sendEmergencySOSAlert(
-        ride.id,
-        ride.driverId,
-        parentIds,
-        driverName,
-        currentLocation
-      );
-
-      toast({
-        title: "🚨 Emergency SOS Sent",
-        description: `Emergency alert sent to ${parentIds.length} parent(s) and emergency services.`,
-        variant: "destructive"
-      });
-
-    } catch (error: any) {
-      console.error('Error sending emergency SOS:', error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to send emergency alert",
-        variant: "destructive"
-      });
-    } finally {
-      setSosLoading(false);
-    }
-  };
-
   const handleStatusUpdate = async (childId: string, status: 'picked_up' | 'absent' | 'dropped_off') => {
     setUpdatingChild(childId);
     
@@ -244,27 +118,6 @@ const ActiveRideTracker: React.FC<ActiveRideTrackerProps> = ({ ride, onRideUpdat
 
       onRideUpdate(updatedRide);
 
-      // Send attendance notification to parent
-      try {
-        const child = updatedChildren.find(c => c.childId === childId);
-        if (child && (status === 'picked_up' || status === 'absent')) {
-          // Get parent ID from booking
-          const booking = await BookingService.getBookingById(child.bookingId);
-          if (booking) {
-            await notificationService.sendAttendanceNotification(
-              booking.parentId,
-              ride.driverId,
-              child.childId,
-              child.fullName,
-              status === 'picked_up' ? 'present' : 'absent'
-            );
-          }
-        }
-      } catch (notificationError) {
-        console.error('Error sending attendance notification:', notificationError);
-        // Don't fail the status update if notification fails
-      }
-
       const statusText = status === 'picked_up' ? 'picked up' : 
                        status === 'dropped_off' ? 'dropped off' : 'absent';
       
@@ -274,36 +127,9 @@ const ActiveRideTracker: React.FC<ActiveRideTrackerProps> = ({ ride, onRideUpdat
       });
 
       if (allProcessed) {
-        // Send trip end notifications to all parents
-        try {
-          const parentNotifications = [];
-          for (const child of updatedChildren) {
-            try {
-              const booking = await BookingService.getBookingById(child.bookingId);
-              if (booking) {
-                parentNotifications.push(
-                  notificationService.sendTripEndNotification(
-                    booking.parentId,
-                    ride.driverId,
-                    ride.id,
-                    'School Route', // You might want to get actual route name
-                    child.fullName
-                  )
-                );
-              }
-            } catch (error) {
-              console.error(`Error getting booking for child ${child.childId}:`, error);
-            }
-          }
-          
-          await Promise.all(parentNotifications);
-        } catch (notificationError) {
-          console.error('Error sending trip completion notifications:', notificationError);
-        }
-
         toast({
           title: "Ride Completed!",
-          description: `All ${updatedChildren.length} children processed. Parents have been notified!`,
+          description: `All ${updatedChildren.length} children processed. Great job!`,
         });
       }
 
@@ -367,55 +193,9 @@ const ActiveRideTracker: React.FC<ActiveRideTrackerProps> = ({ ride, onRideUpdat
             <CardTitle className="text-orange-900 text-lg">
               {ride.status === 'completed' ? '🎉 Ride Completed!' : '🚐 Active Ride'}
             </CardTitle>
-            <div className="flex items-center gap-2">
-              {ride.status === 'in_progress' && (
-                <div className="relative">
-                  <Button
-                    onClick={() => setShowEmergencyMenu(!showEmergencyMenu)}
-                    disabled={sosLoading}
-                    className="bg-red-600 hover:bg-red-700 text-white font-semibold"
-                    size="sm"
-                  >
-                    <Phone className="h-4 w-4 mr-1" />
-                    {sosLoading ? 'Calling...' : 'Emergency SOS'}
-                  </Button>
-                  
-                  {/* Emergency Menu Dropdown */}
-                  {showEmergencyMenu && (
-                    <>
-                      <div 
-                        className="fixed inset-0 z-10" 
-                        onClick={() => setShowEmergencyMenu(false)}
-                      ></div>
-                      <div className="absolute right-0 top-12 z-20 bg-white border border-gray-200 rounded-lg shadow-lg py-2 min-w-[180px]">
-                        <div className="px-3 py-2 text-sm font-semibold text-gray-900 border-b border-gray-100">
-                          Select Emergency Contact
-                        </div>
-                        {emergencyContacts.map((contact) => (
-                          <button
-                            key={contact.name}
-                            onClick={() => handleEmergencyContact(contact)}
-                            className={`w-full px-3 py-3 text-left text-sm hover:bg-gray-50 flex items-center gap-3 transition-colors ${
-                              sosLoading ? 'opacity-50 cursor-not-allowed' : ''
-                            }`}
-                            disabled={sosLoading}
-                          >
-                            <span className="text-lg">{contact.icon}</span>
-                            <div>
-                              <div className="font-medium text-gray-900">{contact.name}</div>
-                              <div className="text-xs text-gray-500">{contact.number}</div>
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    </>
-                  )}
-                </div>
-              )}
-              <Badge className="bg-orange-100 text-orange-800 border-orange-300">
-                {ride.status === 'completed' ? 'Completed' : 'In Progress'}
-              </Badge>
-            </div>
+            <Badge className="bg-orange-100 text-orange-800 border-orange-300">
+              {ride.status === 'completed' ? 'Completed' : 'In Progress'}
+            </Badge>
           </div>
         </CardHeader>
         <CardContent>
@@ -451,6 +231,25 @@ const ActiveRideTracker: React.FC<ActiveRideTrackerProps> = ({ ride, onRideUpdat
           )}
         </CardContent>
       </Card>
+
+      {/* Emergency SOS Button - Only during active ride */}
+      {ride.status === 'in_progress' && (
+        <Card className="border-red-300 bg-gradient-to-r from-red-50 to-red-100 shadow-lg">
+          <CardContent className="p-4">
+            <Button
+              onClick={() => setShowEmergencyModal(true)}
+              className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-6 text-lg shadow-lg"
+              size="lg"
+            >
+              <AlertTriangle className="h-6 w-6 mr-3 animate-pulse" />
+              🚨 EMERGENCY SOS
+            </Button>
+            <p className="text-xs text-red-700 text-center mt-2 font-medium">
+              Tap for immediate emergency assistance during ride
+            </p>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Location Tracking Control */}
       {ride.status !== 'completed' && (
@@ -605,6 +404,12 @@ const ActiveRideTracker: React.FC<ActiveRideTrackerProps> = ({ ride, onRideUpdat
           </Card>
         ))}
       </div>
+
+      {/* Emergency Contact Modal */}
+      <EmergencyContactModal
+        isOpen={showEmergencyModal}
+        onClose={() => setShowEmergencyModal(false)}
+      />
     </div>
   );
 };
